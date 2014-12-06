@@ -15,4 +15,12 @@ class MathUtil {
             return "+" + Double.toString(value)
         }
     }
+
+    static String formatMoney(long money) {
+        int dollarsAsInt = (money / 100)
+        def dollars = Integer.toString(dollarsAsInt).padLeft(2, '0')
+        def cents = "${money % 100}".padLeft(2, '0')
+
+        return "\$" + dollars + "." + cents
+    }
 }

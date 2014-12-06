@@ -32,16 +32,28 @@ class TimeUtil {
         return date
     }
     static Date newDateAtStartOfDay(int year, int month, int day) {
-        Calendar cal = Calendar.getInstance()
+        Calendar cal = calendarAtStartOfDay(Calendar.getInstance())
         cal.set(Calendar.YEAR, year)
         cal.set(Calendar.MONTH, month)
         cal.set(Calendar.DAY_OF_MONTH, day)
+
+        return cal.getTime()
+    }
+
+    static Date dateAtStartOfDay(Date date) {
+        Calendar cal = Calendar.getInstance()
+        cal.setTime(date)
+
+        return calendarAtStartOfDay(cal).getTime()
+    }
+
+    static Calendar calendarAtStartOfDay(Calendar cal) {
         cal.set(Calendar.HOUR_OF_DAY, 0)
         cal.set(Calendar.MINUTE, 0)
         cal.set(Calendar.SECOND, 0)
         cal.set(Calendar.MILLISECOND, 0)
 
-        return cal.getTime()
+        return cal
     }
 
     static long currentTimeMillis() {
