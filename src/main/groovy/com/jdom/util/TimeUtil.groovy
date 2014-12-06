@@ -31,6 +31,18 @@ class TimeUtil {
         Date date = new Date(clock.currentTimeMillis())
         return date
     }
+    static Date newDateAtStartOfDay(int year, int month, int day) {
+        Calendar cal = Calendar.getInstance()
+        cal.set(Calendar.YEAR, year)
+        cal.set(Calendar.MONTH, month)
+        cal.set(Calendar.DAY_OF_MONTH, day)
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+
+        return cal.getTime()
+    }
 
     static long currentTimeMillis() {
         return clock.currentTimeMillis()
@@ -38,6 +50,10 @@ class TimeUtil {
 
     static Date dateFromDashString(String string) {
         return new SimpleDateFormat('yyyy-MM-dd').parse(string)
+    }
+
+    static String dashString(Date date) {
+        return new SimpleDateFormat('yyyy-MM-dd').format(date)
     }
 
     static Date zeroHoursAndBelow(Date date) {

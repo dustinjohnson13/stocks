@@ -6,4 +6,6 @@ import com.jdom.bodycomposition.domain.YahooStockTicker
  */
 interface YahooStockTickerService {
     List<YahooStockTicker> getTickers()
+
+    void updateHistoryData(YahooStockTicker ticker) throws FileNotFoundException
 }

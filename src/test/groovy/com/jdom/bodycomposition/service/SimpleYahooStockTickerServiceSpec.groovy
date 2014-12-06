@@ -25,6 +25,6 @@ class SimpleYahooStockTickerServiceSpec extends Specification {
         def actualSize = results.size()
 
         then: 'the correct number of results were returned'
-        actualSize == 13875
+        actualSize == 6
     }
 }

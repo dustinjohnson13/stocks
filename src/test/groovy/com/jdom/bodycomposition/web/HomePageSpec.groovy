@@ -19,14 +19,16 @@ class HomePageSpec extends Specification {
 
     def setup() {
         tester = new WicketTester(application)
+        tester.startPage(HomePage.class)
+        tester.assertRenderedPage(HomePage.class)
     }
 
     def 'should render the homepage'() {
 
-        when: 'the home page is started'
-        tester.startPage(HomePage.class)
+        when: 'the update ticker data button is clicked'
+        tester.clickLink('updateTickerData')
 
-        then: 'the home page was rendered'
-        tester.assertRenderedPage(HomePage.class)
+        then: 'the ticker data was updated from the most recent date to today'
+
     }
 }
