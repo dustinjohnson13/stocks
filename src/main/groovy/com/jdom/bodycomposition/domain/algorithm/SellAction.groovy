@@ -26,8 +26,8 @@ class SellAction extends TransferAction {
         def newShareCount = actualShareCount - numberOfShares
         shares.put(ticker, newShareCount)
 
-        def newCash = existing.cash + (price * numberOfShares)
-        def newPortfolio = new Portfolio(newCash, shares)
+        def newCash = existing.cash + (price * numberOfShares) - existing.commissionCost
+        def newPortfolio = new Portfolio(newCash, existing.commissionCost, shares)
 
         return newPortfolio
     }

@@ -19,7 +19,8 @@ class TimeUtil {
 
     static Clock clock = new WallClock()
 
-    public static final int MILLIS_PER_DAY = 1000 * 60 * 60 * 24;
+    public static final long MILLIS_PER_DAY = 1000 * 60 * 60 * 24;
+    public static final long MILLIS_PER_YEAR = MILLIS_PER_DAY * 365;
 
     static Calendar newCalendar() {
         Calendar cal = Calendar.getInstance()

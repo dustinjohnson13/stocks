@@ -6,7 +6,7 @@ import com.jdom.bodycomposition.domain.YahooStockTickerData
 /**
  * Created by djohnson on 12/6/14.
  */
-interface Algorithm {
+interface Algorithm extends Serializable {
 
     boolean includeTicker(YahooStockTicker ticker)
 

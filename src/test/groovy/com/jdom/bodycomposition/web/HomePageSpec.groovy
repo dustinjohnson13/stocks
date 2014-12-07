@@ -1,12 +1,12 @@
 package com.jdom.bodycomposition.web
 
-import com.jdom.bodycomposition.domain.algorithm.Portfolio
+import static com.jdom.bodycomposition.web.StocksTester.StocksFormTester
+
 import com.jdom.bodycomposition.service.MockYahooStockTickerHistoryDownloader
 import com.jdom.bodycomposition.service.SpringProfiles
 import com.jdom.bodycomposition.service.StocksContext
 import com.jdom.util.TimeUtil
 import com.jdom.util.TimeUtilHelper
-import org.apache.wicket.util.tester.WicketTester
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
@@ -24,12 +24,12 @@ class HomePageSpec extends Specification {
     @Autowired
     MockYahooStockTickerHistoryDownloader historyDownloader
 
-    WicketTester tester;
+    StocksTester tester;
 
     HomePage page
 
     def setup() {
-        tester = new WicketTester(application)
+        tester = new StocksTester(application)
         page = tester.startPage(HomePage.class)
         tester.assertRenderedPage(HomePage.class)
     }
@@ -89,13 +89,18 @@ class HomePageSpec extends Specification {
 //        (5,'2004-03-18',2496,2489,2503,2458,123231000,1799),
 //        (5,'2010-07-16',2551,2489,2564,2488,65064800,2202),
 
-        page.portfolioModel.object = new Portfolio(20000L)
+        StocksFormTester formTester = tester.newFormTester('algorithmProfilePanel:form')
+        formTester.setValue('startDate', '11/27/2003')
+        formTester.setValue('endDate', '07/17/2010')
+        formTester.setMoney('portfolio.cash', '$200')
+        formTester.setMoney('portfolio.commissionCost', '$5')
 
         when: 'the profile algorithm button is clicked'
-        tester.clickLink('profileAlgorithm')
+        formTester.submit('profile')
+
+        def portfolioCash = formTester.getTextComponentValue('portfolio.cash')
 
         then: 'the portfolio result was calculated'
-        Portfolio result = page.portfolioModel.object
-        result.cash == 9556L
+        portfolioCash == '$65.56'
     }
 }

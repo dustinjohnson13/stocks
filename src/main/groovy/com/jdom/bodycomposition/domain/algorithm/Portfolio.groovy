@@ -12,8 +12,11 @@ class Portfolio implements Serializable {
 
     final Map<YahooStockTicker, Integer> shares = [:]
 
-    Portfolio(long cash, initialShares = [:]) {
+    final long commissionCost
+
+    Portfolio(long cash, long commissionCost, initialShares = [:]) {
         this.cash = cash
+        this.commissionCost = commissionCost
         this.shares.putAll(initialShares)
     }
 
@@ -24,7 +27,7 @@ class Portfolio implements Serializable {
     @Override
     public String toString() {
         def money = MathUtil.formatMoney(cash)
-        StringBuilder sb = new StringBuilder("Cash: ").append(money).
+        StringBuilder sb = new StringBuilder("Cash: ").append(money).append('  Commission: ').append(MathUtil.formatMoney(commissionCost)).
                 append('  Shares: ').append(shares.collect { return it.key.ticker + ': ' + it.value})
         return sb.toString()
     }

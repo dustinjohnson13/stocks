@@ -2,8 +2,8 @@ package com.jdom.bodycomposition.web;
 
 import com.jdom.bodycomposition.domain.BaseTicker;
 import com.jdom.bodycomposition.domain.YahooStockTicker;
+import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario;
 import com.jdom.bodycomposition.domain.algorithm.Portfolio;
-import com.jdom.bodycomposition.domain.algorithm.TestMsftAlgorithm;
 import com.jdom.bodycomposition.service.YahooStockTickerDataDao;
 import com.jdom.bodycomposition.service.YahooStockTickerService;
 import com.jdom.util.TimeUtil;
@@ -33,7 +33,7 @@ public class HomePage extends WebPage {
    @SpringBean
    private YahooStockTickerDataDao yahooStockTickerDataDao;
 
-   IModel<Portfolio> portfolioModel = new Model<>(new Portfolio(0l));
+   IModel<AlgorithmScenario> scenarioModel = new Model<>();
 
    /**
     * Constructor that is invoked when page is invoked without a session.
@@ -41,6 +41,12 @@ public class HomePage extends WebPage {
     * @param parameters Page parameters
     */
    public HomePage(final PageParameters parameters) {
+
+      AlgorithmScenario algorithmScenario = new AlgorithmScenario();
+      algorithmScenario.setPortfolio(new Portfolio(500000L, 495L));
+      algorithmScenario.setStartDate(new Date(TimeUtil.currentTimeMillis() - TimeUtil.MILLIS_PER_YEAR));
+      algorithmScenario.setEndDate(TimeUtil.newDate());
+      scenarioModel.setObject(algorithmScenario);
 
       final AjaxLink<Void> updateTickerData = new AjaxLink<Void>("updateTickerData") {
          @Override
@@ -63,18 +69,7 @@ public class HomePage extends WebPage {
       };
       add(updateTickerData);
 
-      final AjaxLink<Void> profileAlgorithm = new AjaxLink<Void>("profileAlgorithm") {
-         @Override
-         public void onClick(AjaxRequestTarget target) {
-            final Date startDate = TimeUtil.dateFromDashString("2003-11-28");
-            final Date endDate = TimeUtil.dateFromDashString("2010-07-16");
-
-            Portfolio result = bodyCompositionService.profileAlgorithm(new TestMsftAlgorithm(), portfolioModel.getObject(), startDate, endDate);
-            portfolioModel.setObject(result);
-         }
-      };
-      add(profileAlgorithm);
-
+      add(new AlgorithmProfilePanel("algorithmProfilePanel", scenarioModel));
 
       final IModel<List<? extends BaseTicker>> similarDaysEntries = new LoadableDetachableModel<List<? extends BaseTicker>>() {
          protected List<? extends BaseTicker> load() {

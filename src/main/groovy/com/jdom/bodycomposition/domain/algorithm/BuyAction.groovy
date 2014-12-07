@@ -15,7 +15,7 @@ class BuyAction extends TransferAction {
 
     @Override
     protected Portfolio createNewPortfolio(Portfolio existing) {
-        long newCash = existing.cash - (price * numberOfShares)
+        long newCash = existing.cash - (price * numberOfShares) - existing.commissionCost
 
         def shares = [:]
         shares.putAll(existing.shares)
@@ -23,7 +23,7 @@ class BuyAction extends TransferAction {
         def shareCount = shares.containsKey(ticker) ? shares.get(ticker) + numberOfShares : numberOfShares
         shares[ticker] = shareCount
 
-        return new Portfolio(newCash, shares)
+        return new Portfolio(newCash, existing.commissionCost, shares)
     }
 
     @Override

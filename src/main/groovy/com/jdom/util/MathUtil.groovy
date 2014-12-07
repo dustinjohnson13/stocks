@@ -23,4 +23,9 @@ class MathUtil {
 
         return "\$" + dollars + "." + cents
     }
+
+    static long toMoney(final String fromString) {
+        def toParse = (fromString.startsWith('$')) ? fromString.substring(1) : fromString
+        return new BigDecimal(toParse).multiply(new BigDecimal(100)).longValue()
+    }
 }

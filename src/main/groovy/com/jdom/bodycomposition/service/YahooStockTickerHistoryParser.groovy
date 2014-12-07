@@ -2,6 +2,7 @@ package com.jdom.bodycomposition.service
 
 import com.jdom.bodycomposition.domain.YahooStockTicker
 import com.jdom.bodycomposition.domain.YahooStockTickerData
+import com.jdom.util.MathUtil
 import com.jdom.util.TimeUtil
 
 /**
@@ -29,20 +30,16 @@ class YahooStockTickerHistoryParser {
 
             int idx = 0
             entry.date = TimeUtil.dateFromDashString(fields[idx++])
-            entry.open = convertCurrencyToPennies(fields[idx++])
-            entry.high = convertCurrencyToPennies(fields[idx++])
-            entry.low = convertCurrencyToPennies(fields[idx++])
-            entry.close = convertCurrencyToPennies(fields[idx++])
+            entry.open = MathUtil.toMoney(fields[idx++])
+            entry.high = MathUtil.toMoney(fields[idx++])
+            entry.low = MathUtil.toMoney(fields[idx++])
+            entry.close = MathUtil.toMoney(fields[idx++])
             entry.volume = Long.parseLong(fields[idx++])
-            entry.adjustedClose = convertCurrencyToPennies(fields[idx++])
+            entry.adjustedClose = MathUtil.toMoney(fields[idx++])
 
             entries += entry
         }
 
         entries
-    }
-
-    static long convertCurrencyToPennies(String fromString) {
-        return new BigDecimal(fromString).multiply(new BigDecimal(100)).longValue()
     }
 }
