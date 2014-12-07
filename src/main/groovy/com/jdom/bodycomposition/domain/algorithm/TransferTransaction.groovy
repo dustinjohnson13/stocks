@@ -2,6 +2,7 @@ package com.jdom.bodycomposition.domain.algorithm
 
 import com.jdom.bodycomposition.domain.YahooStockTicker
 import com.jdom.util.MathUtil
+import com.jdom.util.TimeUtil
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 import org.slf4j.Logger
@@ -12,17 +13,21 @@ import org.slf4j.LoggerFactory
  */
 @ToString
 @EqualsAndHashCode
-abstract class TransferAction implements TickerAction {
-    private static Logger log = LoggerFactory.getLogger(SellAction)
+abstract class TransferTransaction implements PortfolioTransaction {
+    private static Logger log = LoggerFactory.getLogger(SellTransaction)
 
     final YahooStockTicker ticker
+    final Date date
     final int numberOfShares
     final long price
+    final long commission
 
-    TransferAction(YahooStockTicker ticker, int numberOfShares, long price) {
+    TransferTransaction(YahooStockTicker ticker, final Date date, int numberOfShares, long price, long commission) {
         this.ticker = ticker
+        this.date = date
         this.numberOfShares = numberOfShares
         this.price = price
+        this.commission = commission
     }
 
     @Override
@@ -35,12 +40,13 @@ abstract class TransferAction implements TickerAction {
         newPortfolio.shares.each { ticker, shares ->
             if (shares < 0) {
                 throw new IllegalArgumentException("Portfolio would have ${shares} shares of [${ticker}], " +
-                    "unable to apply!")
+                        "unable to apply!")
             }
         }
 
         if (log.isInfoEnabled()) {
-            StringBuilder sb = new StringBuilder(getAction()).append(" ").append(ticker.ticker).append(" ")
+            StringBuilder sb = new StringBuilder(TimeUtil.dashString(date)).append(getAction()).append(" ")
+                    .append(ticker.ticker).append(" ")
                     .append(numberOfShares).append("@").append(MathUtil.formatMoney(price)).append(":\n")
             sb.append("   From portfolio: ${portfolio}\n").append("   New portfolio: ${newPortfolio}")
 
@@ -50,7 +56,20 @@ abstract class TransferAction implements TickerAction {
         return newPortfolio
     }
 
-    protected abstract Portfolio createNewPortfolio(Portfolio existing)
+    @Override
+    String getSymbol() {
+        return ticker.ticker
+    }
 
-    protected abstract String getAction()
+    @Override
+    int getShares() {
+        return numberOfShares
+    }
+
+    @Override
+    long getCommission() {
+        return commission
+    }
+
+    protected abstract Portfolio createNewPortfolio(Portfolio existing)
 }

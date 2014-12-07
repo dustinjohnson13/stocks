@@ -8,7 +8,7 @@ import groovy.transform.ToString
 @ToString
 class AlgorithmScenario implements Serializable {
 
-    Portfolio portfolio
+    Portfolio startPortfolio
 
     Date startDate
 
@@ -16,4 +16,7 @@ class AlgorithmScenario implements Serializable {
 
     Algorithm algorithm
 
+    List<PortfolioTransaction> transactions = []
+
+    Portfolio resultPortfolio
 }

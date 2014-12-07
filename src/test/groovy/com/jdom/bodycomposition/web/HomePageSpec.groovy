@@ -102,5 +102,8 @@ class HomePageSpec extends Specification {
 
         then: 'the portfolio result was calculated'
         portfolioCash == '$65.56'
+
+        and: 'the expected transactions took place'
+//        formTester.ge
     }
 }

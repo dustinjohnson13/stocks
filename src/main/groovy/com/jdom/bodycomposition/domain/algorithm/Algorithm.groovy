@@ -10,5 +10,5 @@ interface Algorithm extends Serializable {
 
     boolean includeTicker(YahooStockTicker ticker)
 
-    List<TickerAction> actionsForDay(Portfolio portfolio, YahooStockTickerData dayEntry)
+    List<PortfolioTransaction> actionsForDay(Portfolio portfolio, YahooStockTickerData dayEntry)
 }

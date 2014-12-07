@@ -7,15 +7,15 @@ import groovy.transform.ToString
  */
 @ToString(includeSuper = true)
 @EqualsAndHashCode(callSuper = true)
-class BuyAction extends TransferAction {
+class BuyTransaction extends TransferTransaction {
 
-    BuyAction(YahooStockTicker ticker, int numberOfShares, long price) {
-        super(ticker, numberOfShares, price)
+    BuyTransaction(YahooStockTicker ticker, Date date, int numberOfShares, long price, long commission) {
+        super(ticker, date, numberOfShares, price, commission)
     }
 
     @Override
     protected Portfolio createNewPortfolio(Portfolio existing) {
-        long newCash = existing.cash - (price * numberOfShares) - existing.commissionCost
+        long newCash = existing.cash + cashValue - commission
 
         def shares = [:]
         shares.putAll(existing.shares)
@@ -27,7 +27,12 @@ class BuyAction extends TransferAction {
     }
 
     @Override
-    protected String getAction() {
-        return "Purchased"
+    public String getAction() {
+        return "Buy"
+    }
+
+    @Override
+    long getCashValue() {
+        return -(price * numberOfShares)
     }
 }

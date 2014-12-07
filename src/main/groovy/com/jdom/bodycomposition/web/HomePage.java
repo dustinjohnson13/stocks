@@ -1,6 +1,5 @@
 package com.jdom.bodycomposition.web;
 
-import com.jdom.bodycomposition.domain.BaseTicker;
 import com.jdom.bodycomposition.domain.YahooStockTicker;
 import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario;
 import com.jdom.bodycomposition.domain.algorithm.Portfolio;
@@ -11,13 +10,11 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.LoadableDetachableModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.slf4j.Logger;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -43,7 +40,7 @@ public class HomePage extends WebPage {
    public HomePage(final PageParameters parameters) {
 
       AlgorithmScenario algorithmScenario = new AlgorithmScenario();
-      algorithmScenario.setPortfolio(new Portfolio(500000L, 495L));
+      algorithmScenario.setStartPortfolio(new Portfolio(500000L, 495L));
       algorithmScenario.setStartDate(new Date(TimeUtil.currentTimeMillis() - TimeUtil.MILLIS_PER_YEAR));
       algorithmScenario.setEndDate(TimeUtil.newDate());
       scenarioModel.setObject(algorithmScenario);
@@ -71,16 +68,6 @@ public class HomePage extends WebPage {
 
       add(new AlgorithmProfilePanel("algorithmProfilePanel", scenarioModel));
 
-      final IModel<List<? extends BaseTicker>> similarDaysEntries = new LoadableDetachableModel<List<? extends BaseTicker>>() {
-         protected List<? extends BaseTicker> load() {
-//            return bodyCompositionService.getTickers();
-            return Collections.emptyList();
-         }
-      };
-
-      final EntriesPanel similarDays = new EntriesPanel("yahooStockTickers", "Similar Days", similarDaysEntries);
-      similarDays.setOutputMarkupId(true);
-      add(similarDays);
 
    }
 }

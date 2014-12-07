@@ -1,7 +1,8 @@
 package com.jdom.bodycomposition.service
+
 import com.jdom.bodycomposition.domain.YahooStockTicker
 import com.jdom.bodycomposition.domain.algorithm.Algorithm
-import com.jdom.bodycomposition.domain.algorithm.Portfolio
+import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario
 
 /**
  * Created by djohnson on 11/14/14.
@@ -11,5 +12,5 @@ interface YahooStockTickerService {
 
     void updateHistoryData(YahooStockTicker ticker) throws FileNotFoundException
 
-    Portfolio profileAlgorithm(Algorithm algorithm, Portfolio initialPortfolioAmount, Date startDate, Date endDate)
+    AlgorithmScenario profileAlgorithm(Algorithm algorithm, AlgorithmScenario scenario)
 }

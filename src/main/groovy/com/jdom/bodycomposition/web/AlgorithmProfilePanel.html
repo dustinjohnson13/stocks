@@ -11,12 +11,18 @@
         </div>
         <div>
             <label for="cash">Cash:</label>
-            <input wicket:id="portfolio.cash" name="cash" type="text">
+            <input wicket:id="startPortfolio.cash" name="cash" type="text">
         </div>
         <div>
             <label for="commissionCost">Commission:</label>
-            <input wicket:id="portfolio.commissionCost" name="commissionCost" type="text">
+            <input wicket:id="startPortfolio.commissionCost" name="commissionCost" type="text">
         </div>
         <input type="button" wicket:id="profile" value="Profile Algorithm" />
     </form>
+
+    <div wicket:id="transactions" id="transactions"></div>
+    <div wicket:id="resultPortfolio" id="resultPortfolio">
+            <label for="resultCash">Result:</label>
+            <label wicket:id="resultCash" name="resultCash">$4124.96</label>
+    </div>
 </wicket:panel>

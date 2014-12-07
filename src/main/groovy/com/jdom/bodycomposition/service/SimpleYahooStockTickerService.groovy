@@ -2,8 +2,9 @@ package com.jdom.bodycomposition.service
 import com.jdom.bodycomposition.domain.YahooStockTicker
 import com.jdom.bodycomposition.domain.YahooStockTickerData
 import com.jdom.bodycomposition.domain.algorithm.Algorithm
+import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
-import com.jdom.bodycomposition.domain.algorithm.TickerAction
+import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction
 import com.jdom.util.TimeUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -72,9 +73,8 @@ class SimpleYahooStockTickerService implements YahooStockTickerService {
     }
 
     @Override
-    Portfolio profileAlgorithm(final Algorithm algorithm, final Portfolio initialPortfolio,
-                          final Date startDate, final Date endDate) {
-        Portfolio portfolio = initialPortfolio
+    AlgorithmScenario profileAlgorithm(final Algorithm algorithm, final AlgorithmScenario scenario) {
+        Portfolio portfolio = scenario.startPortfolio
         List<YahooStockTicker> tickers = getTickers()
         for (Iterator<YahooStockTicker> iter = tickers.iterator(); iter.hasNext();) {
             if (!algorithm.includeTicker(iter.next())) {
@@ -83,18 +83,23 @@ class SimpleYahooStockTickerService implements YahooStockTickerService {
         }
 
         for (YahooStockTicker ticker : tickers) {
-            def dayEntries = yahooStockTickerDataDao.findByTickerAndDateBetween(ticker, startDate, endDate)
+            def dayEntries = yahooStockTickerDataDao.findByTickerAndDateBetween(ticker, scenario.startDate,
+                    scenario.endDate)
 
             for (YahooStockTickerData dayEntry : dayEntries) {
-                List<TickerAction> actions = algorithm.actionsForDay(portfolio, dayEntry)
+                List<PortfolioTransaction> actions = algorithm.actionsForDay(portfolio, dayEntry)
                 if (!actions.empty) {
-                    actions.each {
-                        portfolio = it.apply(portfolio)
+                    actions.each { transaction ->
+
+                        portfolio = transaction.apply(portfolio)
+                        scenario.transactions += transaction
                     }
                 }
             }
         }
 
-        return portfolio
+        scenario.resultPortfolio = portfolio
+
+        return scenario
     }
 }
