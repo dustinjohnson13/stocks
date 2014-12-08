@@ -1,6 +1,7 @@
 package com.jdom.bodycomposition.web;
 
 import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario;
+import com.jdom.bodycomposition.domain.algorithm.Portfolio;
 import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction;
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue;
 import com.jdom.bodycomposition.domain.algorithm.PositionValue;
@@ -30,9 +31,7 @@ import java.util.List;
 public class AlgorithmProfilePanel extends Panel {
 
    @SpringBean
-   private SecurityService stockTickerService;
-
-   private final WebMarkupContainer resultPortfolio;
+   private SecurityService securityService;
 
    public AlgorithmProfilePanel(final String id, final IModel<AlgorithmScenario> algorithmScenarioModel) {
       super(id, algorithmScenarioModel);
@@ -57,7 +56,7 @@ public class AlgorithmProfilePanel extends Panel {
 
             AlgorithmScenario scenario = algorithmScenarioModel.getObject();
             scenario.getTransactions().clear();
-            AlgorithmScenario result = stockTickerService.profileAlgorithm(scenario);
+            AlgorithmScenario result = securityService.profileAlgorithm(scenario);
 
             target.add(AlgorithmProfilePanel.this);
          }
@@ -70,7 +69,7 @@ public class AlgorithmProfilePanel extends Panel {
          }
       };
 
-      resultPortfolio = new WebMarkupContainer("resultPortfolio") {
+      WebMarkupContainer resultPortfolio = new WebMarkupContainer("resultPortfolio") {
          @Override
          protected void onConfigure() {
             super.onConfigure();
@@ -80,6 +79,13 @@ public class AlgorithmProfilePanel extends Panel {
       };
       resultPortfolio.setOutputMarkupId(true);
       add(resultPortfolio);
+
+      resultPortfolio.add(new Label("duration", new Model<String>() {
+         @Override
+         public String getObject() {
+            return algorithmScenarioModel.getObject().getDuration() + " ms";
+         }
+      }));
 
       final TransactionsPanel transactionsPanel = new TransactionsPanel("transactions", "Transactions", transactions);
       transactionsPanel.setOutputMarkupId(true);
@@ -108,5 +114,29 @@ public class AlgorithmProfilePanel extends Panel {
       final PositionsPanel positionsPanel = new PositionsPanel("positions", "positions", positions);
       positionsPanel.setOutputMarkupId(true);
       resultPortfolio.add(positionsPanel);
+
+      resultPortfolio.add(new Label("marketValue", new Model<String>() {
+         @Override
+         public String getObject() {
+            AlgorithmScenario scenario = algorithmScenarioModel.getObject();
+            final PortfolioValue resultPortfolio = scenario.getResultPortfolio();
+
+            if (resultPortfolio == null) {
+               return "";
+            } else {
+               Portfolio initialPortfolio = scenario.getInitialPortfolio();
+               PortfolioValue initialPortfolioValue = securityService.portfolioValue(initialPortfolio,
+                     scenario.getStartDate());
+
+               String currentValue = MathUtil.formatMoney(resultPortfolio.marketValue());
+               String overallReturn = MathUtil.formatPercentage(resultPortfolio.percentChangeFrom(initialPortfolioValue));
+               return String.format("%s (%s)", currentValue, overallReturn);
+            }
+         }
+
+         @Override
+         public void setObject(final String object) {
+         }
+      }));
    }
 }

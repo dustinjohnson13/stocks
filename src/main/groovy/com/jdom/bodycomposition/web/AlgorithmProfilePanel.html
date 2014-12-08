@@ -23,15 +23,32 @@
     <br/>
 
     <div wicket:id="resultPortfolio" id="resultPortfolio">
+        <div>
+            <strong><label for="duration">Duration:</label></strong>
+            <label wicket:id="duration" name="duration"/>
+        </div>
+        <br/>
         <div wicket:id="transactions" id="transactions"></div>
 
         <br/>
         <br/>
 
-        <strong>Result Portfolio</strong>
-        <div wicket:id="positions" id="positions"></div>
-        <label for="resultCash">Cash:</label>
-        <label wicket:id="resultCash" name="resultCash">$4124.96</label>
-
+        <strong>Portfolio</strong>
+        <table>
+            <div wicket:id="positions" id="positions"></div>
+            <tr>
+                <td>Cash</td>
+                <td/>
+                <td/>
+                <td wicket:id="resultCash">$250.00</td>
+            </tr>
+            <tr/>
+            <tr>
+                <td>Market Value</td>
+                <td/>
+                <td/>
+                <td wicket:id="marketValue">$4173.00</td>
+            </tr>
+        </table>
     </div>
 </wicket:panel>

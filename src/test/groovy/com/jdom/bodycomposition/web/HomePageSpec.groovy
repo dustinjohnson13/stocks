@@ -88,8 +88,10 @@ class HomePageSpec extends Specification {
         when: 'the profile algorithm button is clicked'
         formTester.submit('profile')
 
-
         then: 'the portfolio result was calculated'
-        def portfolioCash = tester.assertLabel('algorithmProfilePanel:resultPortfolio:resultCash', '$65.56')
+        tester.assertLabel('algorithmProfilePanel:resultPortfolio:resultCash', '$65.56')
+
+        and: 'the market value is displayed'
+        tester.assertLabel('algorithmProfilePanel:resultPortfolio:marketValue', '$115.34 (-42.33%)')
     }
 }

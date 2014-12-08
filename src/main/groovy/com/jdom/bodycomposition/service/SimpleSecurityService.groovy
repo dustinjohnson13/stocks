@@ -1,4 +1,5 @@
 package com.jdom.bodycomposition.service
+
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.Stock
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 
 import javax.transaction.Transactional
+
 /**
  * Created by djohnson on 11/14/14.
  */
@@ -28,6 +30,8 @@ import javax.transaction.Transactional
 class SimpleSecurityService implements SecurityService {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleSecurityService)
+
+    static final int MAX_DAILY_SECURITY_DATAS_PER_PAGE = 1000
 
     @Autowired
     StockDao stockDao
@@ -45,7 +49,7 @@ class SimpleSecurityService implements SecurityService {
 
     @Override
     void updateHistoryData(BaseSecurity security) throws FileNotFoundException {
-        log.info("Updating history data for ticker ${security.symbol}")
+        log.info("Updating history data for security ${security.symbol}")
 
         Date start = null
 
@@ -68,33 +72,42 @@ class SimpleSecurityService implements SecurityService {
 
         String historyData = historyDownloader.download(security, start, null)
         def parsedData = new YahooDailySecurityDataParser(security, historyData).parse()
-        log.info("Parsed ${parsedData.size()} entities for ticker ${security.symbol}")
+        log.info("Parsed ${parsedData.size()} entities for security ${security.symbol}")
 
         for (DailySecurityData data : parsedData) {
             stockDao.save(data)
         }
-        log.info("Inserted ${parsedData.size()} entities for ticker ${security.symbol}")
+        log.info("Inserted ${parsedData.size()} entities for security ${security.symbol}")
     }
 
     @Override
     AlgorithmScenario profileAlgorithm(final AlgorithmScenario scenario) {
-        Portfolio portfolio = scenario.initialPortfolio
+
+        long start = TimeUtil.currentTimeMillis()
+
+        Portfolio initialPortfolio = scenario.initialPortfolio
         Algorithm algorithm = scenario.algorithm
 
-        List<Stock> tickers = getStocks()
-        for (Iterator<Stock> iter = tickers.iterator(); iter.hasNext();) {
+        List<Stock> securities = getStocks()
+        for (Iterator<Stock> iter = securities.iterator(); iter.hasNext();) {
             if (!algorithm.includeSecurity(iter.next())) {
                 iter.remove()
             }
         }
 
-        for (Stock ticker : tickers) {
-            def dayEntries = dailySecurityDataDao.findBySecurityAndDateBetween(ticker, scenario.startDate,
-                    scenario.endDate)
+        Portfolio portfolio = initialPortfolio
+        def startDate = scenario.startDate
+        def endDate = scenario.endDate
 
-            for (DailySecurityData dayEntry : dayEntries) {
+        Pageable ascendingByDate = new PageRequest(0, MAX_DAILY_SECURITY_DATAS_PER_PAGE, Sort.Direction.ASC, 'date')
+        Page<DailySecurityData> page = dailySecurityDataDao.findBySecurityInAndDateBetweenOrderByDateAsc(securities, startDate, endDate, ascendingByDate)
+
+        while (page.hasContent()) {
+
+            for (DailySecurityData dayEntry : page.getContent()) {
+
                 List<PortfolioTransaction> actions = algorithm.actionsForDay(portfolio, dayEntry)
-                if (!actions.empty) {
+                if (actions != null && !actions.empty) {
                     actions.each { transaction ->
 
                         portfolio = transaction.apply(portfolio)
@@ -102,9 +115,18 @@ class SimpleSecurityService implements SecurityService {
                     }
                 }
             }
+
+            if (page.last) {
+                break
+            } else if (page.hasNext()) {
+                page = dailySecurityDataDao.findBySecurityInAndDateBetweenOrderByDateAsc(securities, startDate, endDate, page.nextPageable())
+            }
         }
 
-        scenario.resultPortfolio = portfolioValue(portfolio, scenario.endDate)
+        def resultPortfolio = portfolioValue(portfolio, endDate)
+        scenario.resultPortfolio = resultPortfolio
+        scenario.valueChangePercent = resultPortfolio.percentChangeFrom(portfolioValue(initialPortfolio, startDate))
+        scenario.duration = TimeUtil.currentTimeMillis() - start
 
         return scenario
     }
@@ -113,10 +135,18 @@ class SimpleSecurityService implements SecurityService {
     PortfolioValue portfolioValue(final Portfolio portfolio, final Date date) {
         Set<PositionValue> positionValues = new HashSet<>()
         for (Position position : portfolio.positions) {
-            def dailyValue = dailySecurityDataDao.findBySecurityAndDate(position.security, date)
+            Pageable latestUpToDate = new PageRequest(0, 1, Sort.Direction.DESC, 'date')
+            Page<DailySecurityData> page = dailySecurityDataDao.findBySecurityAndDateBetweenOrderByDateDesc(
+                  position.security, new Date(0), date, latestUpToDate)
 
-            positionValues.add(new PositionValue(position, date, dailyValue.close))
+            if (page.hasContent()) {
+                positionValues.add(new PositionValue(position, date, page.getContent()[0].close))
+            } else {
+                log.error(String.format("Unable to find daily security data to calculate the market " +
+                      "value of security [%s] for date [%s]!", position.security.symbol, TimeUtil.dashString(date)))
+            }
         }
         return new PortfolioValue(portfolio, date, positionValues)
     }
+
 }

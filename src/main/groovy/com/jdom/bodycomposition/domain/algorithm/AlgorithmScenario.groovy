@@ -19,4 +19,8 @@ class AlgorithmScenario implements Serializable {
     List<PortfolioTransaction> transactions = []
 
     PortfolioValue resultPortfolio
+
+    long valueChangePercent
+
+    long duration
 }
