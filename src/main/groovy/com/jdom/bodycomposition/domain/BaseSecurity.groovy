@@ -1,5 +1,6 @@
 package com.jdom.bodycomposition.domain
 
+import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 
 import javax.persistence.*
@@ -7,14 +8,15 @@ import javax.persistence.*
  * Created by djohnson on 11/15/14.
  */
 @MappedSuperclass
-@ToString
+@ToString(includes = 'symbol')
+@EqualsAndHashCode(includes = 'symbol')
 class BaseSecurity implements Serializable {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     Long id
 
-    @Column(name = 'ticker') //TODO: Change database column name
+    @Column
     String symbol
 
     @Column

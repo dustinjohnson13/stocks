@@ -8,7 +8,7 @@ import javax.persistence.*
  * Created by djohnson on 11/15/14.
  */
 @Entity
-@Table(name = 'yahoo_stock_ticker_data')
+@Table(name = 'security_daily_data')
 @ToString
 class DailySecurityData implements Serializable {
 
@@ -17,7 +17,6 @@ class DailySecurityData implements Serializable {
     Long id
 
     @ManyToOne
-    @JoinColumn(name = 'ticker_id') //TODO: Rename column in the database
     Stock security
 
     @Column

@@ -21,15 +21,15 @@ connect stocks;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `yahoo_stock_ticker`
+-- Table structure for table `security`
 --
 
-DROP TABLE IF EXISTS `yahoo_stock_ticker`;
+DROP TABLE IF EXISTS `security`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `yahoo_stock_ticker` (
+CREATE TABLE `security` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ticker` varchar(16) NOT NULL,
+  `symbol` varchar(16) NOT NULL,
   `name` varchar(100) NOT NULL,
   `exchange` varchar(3) NOT NULL,
   `category` varchar(50) DEFAULT NULL,
@@ -39,10 +39,10 @@ CREATE TABLE `yahoo_stock_ticker` (
 ) ENGINE=InnoDB AUTO_INCREMENT=16384 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-DROP TABLE IF EXISTS `yahoo_stock_ticker_data`;
-CREATE TABLE `yahoo_stock_ticker_data` (
+DROP TABLE IF EXISTS `security_daily_data`;
+CREATE TABLE `security_daily_data` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ticker_id` int(11) NOT NULL,
+  `security_id` int(11) NOT NULL,
   `date` date NOT NULL,
   `open` int unsigned NOT NULL,
   `close` int unsigned NOT NULL,
@@ -51,20 +51,20 @@ CREATE TABLE `yahoo_stock_ticker_data` (
   `volume` bigint unsigned NOT NULL,
   `adjusted_close` int unsigned NOT NULL,
   PRIMARY KEY (`id`),
-  FOREIGN KEY (ticker_id) REFERENCES yahoo_stock_ticker(id)
+  FOREIGN KEY (security_id) REFERENCES security(id)
   ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=16384 DEFAULT CHARSET=latin1;
 
-ALTER TABLE yahoo_stock_ticker_data ADD CONSTRAINT ticker_date_idx
-UNIQUE (ticker_id, date);
+ALTER TABLE security_daily_data ADD CONSTRAINT security_date_idx
+UNIQUE (security_id, date);
 
 --
--- Dumping data for table `yahoo_stock_ticker`
+-- Dumping data for table `security`
 --
 
-LOCK TABLES `yahoo_stock_ticker` WRITE;
-/*!40000 ALTER TABLE `yahoo_stock_ticker` DISABLE KEYS */;
-INSERT INTO yahoo_stock_ticker(ticker, name, exchange, category, country, category_number) VALUES
+LOCK TABLES `security` WRITE;
+/*!40000 ALTER TABLE `security` DISABLE KEYS */;
+INSERT INTO security(symbol, name, exchange, category, country, category_number) VALUES
 ('5KK.SI','$ China YongS','SES','','Singapore',0),
 ('5KT.SI','$ FujianZY','SES','','Singapore',0),
 ('5FX.SI','$ New Wave','SES','','Singapore',0),
@@ -12545,7 +12545,7 @@ INSERT INTO yahoo_stock_ticker(ticker, name, exchange, category, country, catego
 ('ZYRX','Zyrox Mining International, Inc.','PNK','','USA',0),
 ('002423.SZ','ZYSCO','SHZ','','China',0);
 
-/*!40000 ALTER TABLE `yahoo_stock_ticker` ENABLE KEYS */;
+/*!40000 ALTER TABLE `security` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

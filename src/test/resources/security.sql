@@ -1,5 +1,5 @@
 -- Replace any occurence of \' with ''
-INSERT INTO yahoo_stock_ticker(ticker, name, exchange, category, country, category_number) VALUES
+INSERT INTO security(symbol, name, exchange, category, country, category_number) VALUES
 ('EBF','Ennis Inc.','NYQ','Office Supplies','USA',327),
 ('FB','Facebook, Inc.','NMS','Internet Information Providers','USA',851),
 ('GOOG','Google Inc.','NMS','Internet Information Providers','USA',851),

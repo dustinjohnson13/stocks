@@ -18,5 +18,5 @@ class AlgorithmScenario implements Serializable {
 
     List<PortfolioTransaction> transactions = []
 
-    Portfolio resultPortfolio
+    PortfolioValue resultPortfolio
 }

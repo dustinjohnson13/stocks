@@ -1,6 +1,6 @@
-CREATE TABLE IF NOT EXISTS yahoo_stock_ticker(
+CREATE TABLE IF NOT EXISTS security(
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (start with 1),
-    ticker VARCHAR(16) NOT NULL,
+    symbol VARCHAR(16) NOT NULL,
     name VARCHAR(100) NOT NULL,
     exchange VARCHAR(3) NOT NULL,
     category VARCHAR(50) DEFAULT NULL,
@@ -8,9 +8,9 @@ CREATE TABLE IF NOT EXISTS yahoo_stock_ticker(
     category_number INTEGER NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS yahoo_stock_ticker_data(
+CREATE TABLE IF NOT EXISTS security_daily_data(
   id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (start with 1),
-  ticker_id INTEGER NOT NULL,
+  security_id INTEGER NOT NULL,
   date date NOT NULL,
   open INTEGER NOT NULL,
   close INTEGER NOT NULL,
@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS yahoo_stock_ticker_data(
   low INTEGER NOT NULL,
   volume BIGINT NOT NULL,
   adjusted_close INTEGER NOT NULL,
-  CONSTRAINT fk_ticker_id FOREIGN KEY (ticker_id) REFERENCES yahoo_stock_ticker(id)
+  CONSTRAINT fk_security_id FOREIGN KEY (security_id) REFERENCES security(id)
 );

@@ -1,4 +1,4 @@
-INSERT INTO yahoo_stock_ticker_data(ticker_id, date, open, close, high, low, volume, adjusted_close) VALUES 
+INSERT INTO security_daily_data(security_id, date, open, close, high, low, volume, adjusted_close) VALUES
 (1,'1987-09-24',2963,2963,3025,2963,13000,396),
 (1,'1987-09-25',2950,2950,2950,2925,9400,394),
 (1,'1987-09-28',2963,2963,2988,2963,6300,396),

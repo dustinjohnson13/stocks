@@ -1,10 +1,9 @@
 package com.jdom.bodycomposition.web;
 
 import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario;
-import com.jdom.bodycomposition.domain.algorithm.Portfolio;
 import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction;
-import com.jdom.bodycomposition.domain.algorithm.Position;
-import com.jdom.bodycomposition.domain.algorithm.TestMsftAlgorithm;
+import com.jdom.bodycomposition.domain.algorithm.PortfolioValue;
+import com.jdom.bodycomposition.domain.algorithm.PositionValue;
 import com.jdom.bodycomposition.service.SecurityService;
 import com.jdom.util.MathUtil;
 import org.apache.wicket.Component;
@@ -58,7 +57,7 @@ public class AlgorithmProfilePanel extends Panel {
 
             AlgorithmScenario scenario = algorithmScenarioModel.getObject();
             scenario.getTransactions().clear();
-            AlgorithmScenario result = stockTickerService.profileAlgorithm(new TestMsftAlgorithm(), scenario);
+            AlgorithmScenario result = stockTickerService.profileAlgorithm(scenario);
 
             target.add(AlgorithmProfilePanel.this);
          }
@@ -89,7 +88,7 @@ public class AlgorithmProfilePanel extends Panel {
       resultPortfolio.add(new Label("resultCash", new Model<String>() {
          @Override
          public String getObject() {
-            final Portfolio resultPortfolio = algorithmScenarioModel.getObject().getResultPortfolio();
+            final PortfolioValue resultPortfolio = algorithmScenarioModel.getObject().getResultPortfolio();
             return resultPortfolio == null ? "" : MathUtil.formatMoney(resultPortfolio.getCash());
          }
 
@@ -98,10 +97,10 @@ public class AlgorithmProfilePanel extends Panel {
          }
       }));
 
-      final IModel<List<? extends Position>> positions = new LoadableDetachableModel<List<? extends Position>>() {
-         protected List<? extends Position> load() {
-            final Portfolio resultPortfolio = algorithmScenarioModel.getObject().getResultPortfolio();
-            return (resultPortfolio == null) ? Collections.<Position>emptyList() :
+      final IModel<List<? extends PositionValue>> positions = new LoadableDetachableModel<List<? extends PositionValue>>() {
+         protected List<? extends PositionValue> load() {
+            final PortfolioValue resultPortfolio = algorithmScenarioModel.getObject().getResultPortfolio();
+            return (resultPortfolio == null) ? Collections.<PositionValue>emptyList() :
                     new ArrayList<>(resultPortfolio.getPositions());
          }
       };

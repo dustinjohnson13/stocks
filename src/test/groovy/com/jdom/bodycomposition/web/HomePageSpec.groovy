@@ -38,7 +38,7 @@ class HomePageSpec extends Specification {
         TimeUtilHelper.resumeTime()
     }
 
-    def 'should update ticker data up to the present when the button is clicked'() {
+    def 'should update daily security data up to the present when the button is clicked'() {
 
         def expectedTickers = [
                 'EBF',
@@ -49,8 +49,8 @@ class HomePageSpec extends Specification {
                 'YHOO'
         ]
 
-        when: 'the update ticker data button is clicked'
-        tester.clickLink('updateTickerData')
+        when: 'the update daily security data button is clicked'
+        tester.clickLink('updateSecurityDailyData')
 
         def updateRequests = historyDownloader.updateRequests
         then: 'the ticker data was updated from the most recent date to today'
@@ -70,7 +70,7 @@ class HomePageSpec extends Specification {
         TimeUtilHelper.freezeTime(TimeUtil.newDateAtStartOfDay(2014, Calendar.DECEMBER, 5))
 
         when: 'the update ticker data button is clicked'
-        tester.clickLink('updateTickerData')
+        tester.clickLink('updateSecurityDailyData')
 
         def updateRequests = historyDownloader.updateRequests
         then: 'the ticker data was updated from the most recent date to today'
@@ -79,19 +79,9 @@ class HomePageSpec extends Specification {
 
     def 'should profile algorithm on button click'() {
 
-//        PURCHASES:
-//        (5,'2003-11-28',2550,2571,2575,2540,33402600,1859),
-//        (5,'2005-05-18',2550,2570,2584,2542,71182400,2090),
-//        (5,'2010-07-14',2550,2544,2561,2512,72808100,2251),
-//        (5,'2010-07-15',2550,2551,2559,2498,56934700,2257)
-
-//        SALES;
-//        (5,'2004-03-18',2496,2489,2503,2458,123231000,1799),
-//        (5,'2010-07-16',2551,2489,2564,2488,65064800,2202),
-
         StocksFormTester formTester = tester.newFormTester('algorithmProfilePanel:form')
         formTester.setValue('startDate', '11/27/2003')
-        formTester.setValue('endDate', '07/17/2010')
+        formTester.setValue('endDate', '07/16/2010')
         formTester.setMoney('initialPortfolio.cash', '$200')
         formTester.setMoney('initialPortfolio.commissionCost', '$5')
 
@@ -100,7 +90,6 @@ class HomePageSpec extends Specification {
 
 
         then: 'the portfolio result was calculated'
-        tester.debugComponentTrees()
         def portfolioCash = tester.assertLabel('algorithmProfilePanel:resultPortfolio:resultCash', '$65.56')
     }
 }

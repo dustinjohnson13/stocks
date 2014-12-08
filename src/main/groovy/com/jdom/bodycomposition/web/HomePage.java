@@ -3,6 +3,7 @@ package com.jdom.bodycomposition.web;
 import com.jdom.bodycomposition.domain.Stock;
 import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario;
 import com.jdom.bodycomposition.domain.algorithm.Portfolio;
+import com.jdom.bodycomposition.domain.algorithm.TestMsftAlgorithm;
 import com.jdom.bodycomposition.service.DailySecurityDataDao;
 import com.jdom.bodycomposition.service.SecurityService;
 import com.jdom.util.TimeUtil;
@@ -43,9 +44,10 @@ public class HomePage extends WebPage {
       algorithmScenario.setInitialPortfolio(new Portfolio(500000L, 495L));
       algorithmScenario.setStartDate(new Date(TimeUtil.currentTimeMillis() - TimeUtil.MILLIS_PER_YEAR));
       algorithmScenario.setEndDate(TimeUtil.newDate());
+      algorithmScenario.setAlgorithm(new TestMsftAlgorithm());
       scenarioModel.setObject(algorithmScenario);
 
-      final AjaxLink<Void> updateTickerData = new AjaxLink<Void>("updateTickerData") {
+      final AjaxLink<Void> updateSecurityDailyData = new AjaxLink<Void>("updateSecurityDailyData") {
          @Override
          public void onClick(AjaxRequestTarget target) {
             List<Stock> tickers = bodyCompositionService.getStocks();
@@ -64,7 +66,7 @@ public class HomePage extends WebPage {
             }
          }
       };
-      add(updateTickerData);
+      add(updateSecurityDailyData);
 
       add(new AlgorithmProfilePanel("algorithmProfilePanel", scenarioModel));
 

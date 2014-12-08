@@ -16,7 +16,7 @@ class HSQLContext {
     public EmbeddedDatabase embeddedDatabase() {
         EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
         EmbeddedDatabase db = builder.setType(EmbeddedDatabaseType.HSQL).addScript("schema.sql")
-              .addScript("yahoo_stock_ticker.sql").addScript("yahoo_stock_ticker_data.sql").build();
+              .addScript("security.sql").addScript("security_daily_data.sql").build();
         return db
     }
 }

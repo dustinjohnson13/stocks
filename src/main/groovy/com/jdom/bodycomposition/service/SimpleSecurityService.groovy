@@ -1,12 +1,14 @@
 package com.jdom.bodycomposition.service
-
 import com.jdom.bodycomposition.domain.BaseSecurity
-import com.jdom.bodycomposition.domain.Stock
 import com.jdom.bodycomposition.domain.DailySecurityData
+import com.jdom.bodycomposition.domain.Stock
 import com.jdom.bodycomposition.domain.algorithm.Algorithm
 import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction
+import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
+import com.jdom.bodycomposition.domain.algorithm.Position
+import com.jdom.bodycomposition.domain.algorithm.PositionValue
 import com.jdom.util.TimeUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -75,8 +77,10 @@ class SimpleSecurityService implements SecurityService {
     }
 
     @Override
-    AlgorithmScenario profileAlgorithm(final Algorithm algorithm, final AlgorithmScenario scenario) {
+    AlgorithmScenario profileAlgorithm(final AlgorithmScenario scenario) {
         Portfolio portfolio = scenario.initialPortfolio
+        Algorithm algorithm = scenario.algorithm
+
         List<Stock> tickers = getStocks()
         for (Iterator<Stock> iter = tickers.iterator(); iter.hasNext();) {
             if (!algorithm.includeSecurity(iter.next())) {
@@ -100,8 +104,19 @@ class SimpleSecurityService implements SecurityService {
             }
         }
 
-        scenario.resultPortfolio = portfolio
+        scenario.resultPortfolio = portfolioValue(portfolio, scenario.endDate)
 
         return scenario
+    }
+
+    @Override
+    PortfolioValue portfolioValue(final Portfolio portfolio, final Date date) {
+        Set<PositionValue> positionValues = new HashSet<>()
+        for (Position position : portfolio.positions) {
+            def dailyValue = dailySecurityDataDao.findBySecurityAndDate(position.security, date)
+
+            positionValues.add(new PositionValue(position, date, dailyValue.close))
+        }
+        return new PortfolioValue(portfolio, date, positionValues)
     }
 }
