@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Profile
 @Configuration
 class MockNetworkContext {
     @Bean
-    public YahooStockTickerHistoryDownloader downloader() {
-        return new MockYahooStockTickerHistoryDownloader()
+    public DailySecurityDataDownloader downloader() {
+        return new MockDailySecurityDataDownloader()
     }
 }

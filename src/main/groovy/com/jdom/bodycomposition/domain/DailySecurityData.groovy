@@ -10,14 +10,15 @@ import javax.persistence.*
 @Entity
 @Table(name = 'yahoo_stock_ticker_data')
 @ToString
-class YahooStockTickerData implements Serializable {
+class DailySecurityData implements Serializable {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     Long id
 
     @ManyToOne
-    YahooStockTicker ticker
+    @JoinColumn(name = 'ticker_id') //TODO: Rename column in the database
+    Stock security
 
     @Column
     Date date

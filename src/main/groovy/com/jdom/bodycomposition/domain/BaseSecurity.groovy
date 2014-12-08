@@ -8,14 +8,14 @@ import javax.persistence.*
  */
 @MappedSuperclass
 @ToString
-class BaseTicker implements Serializable {
+class BaseSecurity implements Serializable {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     Long id
 
-    @Column
-    String ticker
+    @Column(name = 'ticker') //TODO: Change database column name
+    String symbol
 
     @Column
     String name

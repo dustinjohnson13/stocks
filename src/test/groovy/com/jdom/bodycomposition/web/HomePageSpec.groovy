@@ -2,7 +2,7 @@ package com.jdom.bodycomposition.web
 
 import static com.jdom.bodycomposition.web.StocksTester.StocksFormTester
 
-import com.jdom.bodycomposition.service.MockYahooStockTickerHistoryDownloader
+import com.jdom.bodycomposition.service.MockDailySecurityDataDownloader
 import com.jdom.bodycomposition.service.SpringProfiles
 import com.jdom.bodycomposition.service.StocksContext
 import com.jdom.util.TimeUtil
@@ -22,7 +22,7 @@ class HomePageSpec extends Specification {
     WicketApplication application
 
     @Autowired
-    MockYahooStockTickerHistoryDownloader historyDownloader
+    MockDailySecurityDataDownloader historyDownloader
 
     StocksTester tester;
 
@@ -60,7 +60,7 @@ class HomePageSpec extends Specification {
         updateRequests.eachWithIndex { it, idx ->
             assert it.start == TimeUtil.newDateAtStartOfDay(2014, Calendar.DECEMBER, 6)
             assert it.end == null
-            assert it.ticker.ticker == expectedTickers[idx]
+            assert it.ticker.symbol == expectedTickers[idx]
         }
     }
 
@@ -92,18 +92,15 @@ class HomePageSpec extends Specification {
         StocksFormTester formTester = tester.newFormTester('algorithmProfilePanel:form')
         formTester.setValue('startDate', '11/27/2003')
         formTester.setValue('endDate', '07/17/2010')
-        formTester.setMoney('portfolio.cash', '$200')
-        formTester.setMoney('portfolio.commissionCost', '$5')
+        formTester.setMoney('initialPortfolio.cash', '$200')
+        formTester.setMoney('initialPortfolio.commissionCost', '$5')
 
         when: 'the profile algorithm button is clicked'
         formTester.submit('profile')
 
-        def portfolioCash = formTester.getTextComponentValue('portfolio.cash')
 
         then: 'the portfolio result was calculated'
-        portfolioCash == '$65.56'
-
-        and: 'the expected transactions took place'
-//        formTester.ge
+        tester.debugComponentTrees()
+        def portfolioCash = tester.assertLabel('algorithmProfilePanel:resultPortfolio:resultCash', '$65.56')
     }
 }

@@ -1,7 +1,9 @@
 package com.jdom.bodycomposition.domain.algorithm
-import com.jdom.bodycomposition.domain.YahooStockTicker
+
+import com.jdom.bodycomposition.domain.BaseSecurity
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
+
 /**
  * Created by djohnson on 12/6/14.
  */
@@ -9,26 +11,27 @@ import groovy.transform.ToString
 @EqualsAndHashCode(callSuper = true)
 class SellTransaction extends TransferTransaction {
 
-    SellTransaction(YahooStockTicker ticker, Date date, int numberOfShares, long price, long commission) {
-        super(ticker, date, numberOfShares, price, commission)
+    SellTransaction(BaseSecurity security, Date date, int numberOfShares, long price, long commission) {
+        super(security, date, numberOfShares, price, commission)
     }
 
     @Override
     protected Portfolio createNewPortfolio(Portfolio existing) {
-        int actualShareCount = 0
-        def shares = [:]
-        shares.putAll(existing.shares)
 
-        if (shares.containsKey(ticker)) {
-            actualShareCount = shares[ticker]
+        def positions = new HashSet<Position>()
+        positions.addAll(existing.positions)
+
+        def position = positions.find { it.security == security }
+        if (position == null) {
+            position = new Position(security, numberOfShares)
+        } else {
+            position = new Position(security, position.shares - numberOfShares)
         }
+        positions.add(position)
 
-        def newShareCount = actualShareCount - numberOfShares
-        shares.put(ticker, newShareCount)
+        long newCash = existing.cash + cashValue - commission
 
-        long newCash = existing.cash - cashValue - commission
-
-        def newPortfolio = new Portfolio(newCash, existing.commissionCost, shares)
+        def newPortfolio = new Portfolio(newCash, existing.commissionCost, positions)
 
         return newPortfolio
     }

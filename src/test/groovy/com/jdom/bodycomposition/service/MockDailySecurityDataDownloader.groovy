@@ -1,27 +1,27 @@
 package com.jdom.bodycomposition.service
 
-import com.jdom.bodycomposition.domain.YahooStockTicker
+import com.jdom.bodycomposition.domain.Stock
 
 /**
  * Created by djohnson on 12/6/14.
  */
-class MockYahooStockTickerHistoryDownloader implements YahooStockTickerHistoryDownloader {
+class MockDailySecurityDataDownloader implements DailySecurityDataDownloader {
 
     List<UpdateRequest> updateRequests = []
 
     @Override
-    String download(YahooStockTicker ticker) {
+    String download(Stock ticker) {
         return download(ticker, null, null)
     }
 
     @Override
-    String download(YahooStockTicker ticker, Date start, Date end) {
+    String download(Stock ticker, Date start, Date end) {
         updateRequests += new UpdateRequest(ticker: ticker, start: start, end: end)
         return ''
     }
 
     static class UpdateRequest {
-        YahooStockTicker ticker
+        Stock ticker
         Date start
         Date end
     }

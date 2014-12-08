@@ -1,13 +1,11 @@
 package com.jdom.bodycomposition.domain.algorithm
-
-import com.jdom.bodycomposition.domain.YahooStockTicker
+import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.util.MathUtil
 import com.jdom.util.TimeUtil
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
 /**
  * Created by djohnson on 12/6/14.
  */
@@ -16,14 +14,14 @@ import org.slf4j.LoggerFactory
 abstract class TransferTransaction implements PortfolioTransaction {
     private static Logger log = LoggerFactory.getLogger(SellTransaction)
 
-    final YahooStockTicker ticker
+    final BaseSecurity security
     final Date date
     final int numberOfShares
     final long price
     final long commission
 
-    TransferTransaction(YahooStockTicker ticker, final Date date, int numberOfShares, long price, long commission) {
-        this.ticker = ticker
+    TransferTransaction(BaseSecurity security, final Date date, int numberOfShares, long price, long commission) {
+        this.security = security
         this.date = date
         this.numberOfShares = numberOfShares
         this.price = price
@@ -37,16 +35,16 @@ abstract class TransferTransaction implements PortfolioTransaction {
         if (newPortfolio.cash < 0) {
             throw new IllegalArgumentException("Portfolio would have ${newPortfolio.cash}, unable to apply!")
         }
-        newPortfolio.shares.each { ticker, shares ->
-            if (shares < 0) {
-                throw new IllegalArgumentException("Portfolio would have ${shares} shares of [${ticker}], " +
+        newPortfolio.positions.each { position ->
+            if (position.shares < 0) {
+                throw new IllegalArgumentException("Portfolio would have ${position.shares} shares of [${position.security}], " +
                         "unable to apply!")
             }
         }
 
         if (log.isInfoEnabled()) {
             StringBuilder sb = new StringBuilder(TimeUtil.dashString(date)).append(getAction()).append(" ")
-                    .append(ticker.ticker).append(" ")
+                    .append(security.symbol).append(" ")
                     .append(numberOfShares).append("@").append(MathUtil.formatMoney(price)).append(":\n")
             sb.append("   From portfolio: ${portfolio}\n").append("   New portfolio: ${newPortfolio}")
 
@@ -58,7 +56,7 @@ abstract class TransferTransaction implements PortfolioTransaction {
 
     @Override
     String getSymbol() {
-        return ticker.ticker
+        return security.symbol
     }
 
     @Override

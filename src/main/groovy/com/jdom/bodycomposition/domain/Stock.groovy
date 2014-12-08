@@ -10,5 +10,5 @@ import javax.persistence.Table
 @Entity
 @Table(name = 'yahoo_stock_ticker')
 @EqualsAndHashCode
-class YahooStockTicker extends BaseTicker {
+class Stock extends BaseSecurity {
 }

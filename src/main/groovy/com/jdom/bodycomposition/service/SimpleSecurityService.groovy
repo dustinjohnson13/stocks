@@ -1,6 +1,8 @@
 package com.jdom.bodycomposition.service
-import com.jdom.bodycomposition.domain.YahooStockTicker
-import com.jdom.bodycomposition.domain.YahooStockTickerData
+
+import com.jdom.bodycomposition.domain.BaseSecurity
+import com.jdom.bodycomposition.domain.Stock
+import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.algorithm.Algorithm
 import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
@@ -21,32 +23,32 @@ import javax.transaction.Transactional
  */
 @Service
 @Transactional
-class SimpleYahooStockTickerService implements YahooStockTickerService {
+class SimpleSecurityService implements SecurityService {
 
-    private static final Logger log = LoggerFactory.getLogger(SimpleYahooStockTickerService)
-
-    @Autowired
-    YahooStockTickerDao yahooStockTickerDao
+    private static final Logger log = LoggerFactory.getLogger(SimpleSecurityService)
 
     @Autowired
-    YahooStockTickerDataDao yahooStockTickerDataDao
+    StockDao stockDao
 
     @Autowired
-    YahooStockTickerHistoryDownloader historyDownloader
+    DailySecurityDataDao dailySecurityDataDao
+
+    @Autowired
+    DailySecurityDataDownloader historyDownloader
 
     @Override
-    List<YahooStockTicker> getTickers() {
-        return yahooStockTickerDao.findAll()
+    List<Stock> getStocks() {
+        return stockDao.findAll()
     }
 
     @Override
-    void updateHistoryData(YahooStockTicker ticker) throws FileNotFoundException {
-        log.info("Updating history data for ticker ${ticker.ticker}")
+    void updateHistoryData(BaseSecurity security) throws FileNotFoundException {
+        log.info("Updating history data for ticker ${security.symbol}")
 
         Date start = null
 
         Pageable latest = new PageRequest(0, 1, Sort.Direction.DESC, 'date')
-        Page<YahooStockTickerData> page = yahooStockTickerDataDao.findByTickerOrderByDateDesc(ticker, latest)
+        Page<DailySecurityData> page = dailySecurityDataDao.findBySecurityOrderByDateDesc(security, latest)
 
         if (page.hasContent()) {
             Date latestDate = TimeUtil.dateAtStartOfDay(page.getContent()[0].date)
@@ -62,31 +64,31 @@ class SimpleYahooStockTickerService implements YahooStockTickerService {
             start = cal.getTime()
         }
 
-        String historyData = historyDownloader.download(ticker, start, null)
-        def parsedData = new YahooStockTickerHistoryParser(ticker, historyData).parse()
-        log.info("Parsed ${parsedData.size()} entities for ticker ${ticker.ticker}")
+        String historyData = historyDownloader.download(security, start, null)
+        def parsedData = new YahooDailySecurityDataParser(security, historyData).parse()
+        log.info("Parsed ${parsedData.size()} entities for ticker ${security.symbol}")
 
-        for (YahooStockTickerData data : parsedData) {
-            yahooStockTickerDao.save(data)
+        for (DailySecurityData data : parsedData) {
+            stockDao.save(data)
         }
-        log.info("Inserted ${parsedData.size()} entities for ticker ${ticker.ticker}")
+        log.info("Inserted ${parsedData.size()} entities for ticker ${security.symbol}")
     }
 
     @Override
     AlgorithmScenario profileAlgorithm(final Algorithm algorithm, final AlgorithmScenario scenario) {
-        Portfolio portfolio = scenario.startPortfolio
-        List<YahooStockTicker> tickers = getTickers()
-        for (Iterator<YahooStockTicker> iter = tickers.iterator(); iter.hasNext();) {
-            if (!algorithm.includeTicker(iter.next())) {
+        Portfolio portfolio = scenario.initialPortfolio
+        List<Stock> tickers = getStocks()
+        for (Iterator<Stock> iter = tickers.iterator(); iter.hasNext();) {
+            if (!algorithm.includeSecurity(iter.next())) {
                 iter.remove()
             }
         }
 
-        for (YahooStockTicker ticker : tickers) {
-            def dayEntries = yahooStockTickerDataDao.findByTickerAndDateBetween(ticker, scenario.startDate,
+        for (Stock ticker : tickers) {
+            def dayEntries = dailySecurityDataDao.findBySecurityAndDateBetween(ticker, scenario.startDate,
                     scenario.endDate)
 
-            for (YahooStockTickerData dayEntry : dayEntries) {
+            for (DailySecurityData dayEntry : dayEntries) {
                 List<PortfolioTransaction> actions = algorithm.actionsForDay(portfolio, dayEntry)
                 if (!actions.empty) {
                     actions.each { transaction ->

@@ -8,7 +8,7 @@ import groovy.transform.ToString
 @ToString
 class AlgorithmScenario implements Serializable {
 
-    Portfolio startPortfolio
+    Portfolio initialPortfolio
 
     Date startDate
 

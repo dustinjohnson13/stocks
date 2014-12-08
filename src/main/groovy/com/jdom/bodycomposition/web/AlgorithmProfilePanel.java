@@ -3,8 +3,9 @@ package com.jdom.bodycomposition.web;
 import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario;
 import com.jdom.bodycomposition.domain.algorithm.Portfolio;
 import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction;
+import com.jdom.bodycomposition.domain.algorithm.Position;
 import com.jdom.bodycomposition.domain.algorithm.TestMsftAlgorithm;
-import com.jdom.bodycomposition.service.YahooStockTickerService;
+import com.jdom.bodycomposition.service.SecurityService;
 import com.jdom.util.MathUtil;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -20,6 +21,8 @@ import org.apache.wicket.model.LoadableDetachableModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -28,7 +31,9 @@ import java.util.List;
 public class AlgorithmProfilePanel extends Panel {
 
    @SpringBean
-   private YahooStockTickerService stockTickerService;
+   private SecurityService stockTickerService;
+
+   private final WebMarkupContainer resultPortfolio;
 
    public AlgorithmProfilePanel(final String id, final IModel<AlgorithmScenario> algorithmScenarioModel) {
       super(id, algorithmScenarioModel);
@@ -39,8 +44,8 @@ public class AlgorithmProfilePanel extends Panel {
 
       DateTextField startDate = new DateTextField("startDate");
       DateTextField endDate = new DateTextField("endDate");
-      Component cash = new CurrencyTextField("startPortfolio.cash");
-      Component commission = new CurrencyTextField("startPortfolio.commissionCost");
+      Component cash = new CurrencyTextField("initialPortfolio.cash");
+      Component commission = new CurrencyTextField("initialPortfolio.commissionCost");
 
       form.add(startDate);
       form.add(endDate);
@@ -66,11 +71,7 @@ public class AlgorithmProfilePanel extends Panel {
          }
       };
 
-      final TransactionsPanel transactionsPanel = new TransactionsPanel("transactions", "Transactions", transactions);
-      transactionsPanel.setOutputMarkupId(true);
-      add(transactionsPanel);
-
-      final WebMarkupContainer result = new WebMarkupContainer("resultPortfolio") {
+      resultPortfolio = new WebMarkupContainer("resultPortfolio") {
          @Override
          protected void onConfigure() {
             super.onConfigure();
@@ -78,7 +79,14 @@ public class AlgorithmProfilePanel extends Panel {
             setVisible(algorithmScenarioModel.getObject().getResultPortfolio() != null);
          }
       };
-      result.add(new Label("resultCash", new Model<String>() {
+      resultPortfolio.setOutputMarkupId(true);
+      add(resultPortfolio);
+
+      final TransactionsPanel transactionsPanel = new TransactionsPanel("transactions", "Transactions", transactions);
+      transactionsPanel.setOutputMarkupId(true);
+      resultPortfolio.add(transactionsPanel);
+
+      resultPortfolio.add(new Label("resultCash", new Model<String>() {
          @Override
          public String getObject() {
             final Portfolio resultPortfolio = algorithmScenarioModel.getObject().getResultPortfolio();
@@ -90,6 +98,16 @@ public class AlgorithmProfilePanel extends Panel {
          }
       }));
 
-      add(result);
+      final IModel<List<? extends Position>> positions = new LoadableDetachableModel<List<? extends Position>>() {
+         protected List<? extends Position> load() {
+            final Portfolio resultPortfolio = algorithmScenarioModel.getObject().getResultPortfolio();
+            return (resultPortfolio == null) ? Collections.<Position>emptyList() :
+                    new ArrayList<>(resultPortfolio.getPositions());
+         }
+      };
+
+      final PositionsPanel positionsPanel = new PositionsPanel("positions", "positions", positions);
+      positionsPanel.setOutputMarkupId(true);
+      resultPortfolio.add(positionsPanel);
    }
 }

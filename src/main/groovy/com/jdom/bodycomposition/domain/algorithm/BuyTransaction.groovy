@@ -1,5 +1,5 @@
 package com.jdom.bodycomposition.domain.algorithm
-import com.jdom.bodycomposition.domain.YahooStockTicker
+import com.jdom.bodycomposition.domain.BaseSecurity
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 /**
@@ -9,21 +9,26 @@ import groovy.transform.ToString
 @EqualsAndHashCode(callSuper = true)
 class BuyTransaction extends TransferTransaction {
 
-    BuyTransaction(YahooStockTicker ticker, Date date, int numberOfShares, long price, long commission) {
-        super(ticker, date, numberOfShares, price, commission)
+    BuyTransaction(BaseSecurity security, Date date, int numberOfShares, long price, long commission) {
+        super(security, date, numberOfShares, price, commission)
     }
 
     @Override
     protected Portfolio createNewPortfolio(Portfolio existing) {
         long newCash = existing.cash + cashValue - commission
 
-        def shares = [:]
-        shares.putAll(existing.shares)
+        def positions = new HashSet<Position>()
+        positions.addAll(existing.positions)
 
-        def shareCount = shares.containsKey(ticker) ? shares.get(ticker) + numberOfShares : numberOfShares
-        shares[ticker] = shareCount
+        def position = positions.find{ it.security == security }
+        if (position == null) {
+            position = new Position(security, numberOfShares)
+        } else {
+            position = new Position(security, position.shares + numberOfShares)
+        }
+        positions.add(position)
 
-        return new Portfolio(newCash, existing.commissionCost, shares)
+        return new Portfolio(newCash, existing.commissionCost, positions)
     }
 
     @Override

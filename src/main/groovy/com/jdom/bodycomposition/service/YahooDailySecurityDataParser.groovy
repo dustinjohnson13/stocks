@@ -1,29 +1,29 @@
 package com.jdom.bodycomposition.service
 
-import com.jdom.bodycomposition.domain.YahooStockTicker
-import com.jdom.bodycomposition.domain.YahooStockTickerData
+import com.jdom.bodycomposition.domain.Stock
+import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.util.MathUtil
 import com.jdom.util.TimeUtil
 
 /**
  * Created by djohnson on 12/6/14.
  */
-class YahooStockTickerHistoryParser {
+class YahooDailySecurityDataParser {
 
-    final YahooStockTicker ticker
+    final Stock security
     final String data
 
-    YahooStockTickerHistoryParser(YahooStockTicker ticker, String data) {
-        this.ticker = ticker
+    YahooDailySecurityDataParser(Stock security, String data) {
+        this.security = security
         this.data = data
     }
 
-    List<YahooStockTickerData> parse() {
-        List<YahooStockTickerData> entries = []
+    List<DailySecurityData> parse() {
+        List<DailySecurityData> entries = []
 
         String[] lines = data.split('\n')
         for (int i = lines.length - 1; i > 0; i--) {
-            def entry = new YahooStockTickerData(ticker: ticker)
+            def entry = new DailySecurityData(security: security)
 
             def line = lines[i]
             String[] fields = line.split(',')

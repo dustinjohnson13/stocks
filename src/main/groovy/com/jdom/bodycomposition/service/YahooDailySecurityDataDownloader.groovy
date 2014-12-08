@@ -1,22 +1,22 @@
 package com.jdom.bodycomposition.service
 
-import com.jdom.bodycomposition.domain.YahooStockTicker
+import com.jdom.bodycomposition.domain.Stock
 
 /**
  * Created by djohnson on 12/5/14.
  */
-class SimpleYahooStockTickerHistoryDownloader implements YahooStockTickerHistoryDownloader {
+class YahooDailySecurityDataDownloader implements DailySecurityDataDownloader {
 
     private static final String BASE_URL = 'http://ichart.finance.yahoo.com/table.csv?s='
 
     @Override
-    String download(YahooStockTicker ticker) {
-        return download(ticker, null, null)
+    String download(Stock security) {
+        return download(security, null, null)
     }
 
     @Override
-    String download(YahooStockTicker ticker, Date start, Date end) {
-        def urlString = new StringBuilder(BASE_URL).append(ticker.ticker)
+    String download(Stock security, Date start, Date end) {
+        def urlString = new StringBuilder(BASE_URL).append(security.symbol)
         if (start != null) {
             Calendar cal = Calendar.getInstance()
             cal.setTime(start)

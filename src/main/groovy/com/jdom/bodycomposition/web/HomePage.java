@@ -1,10 +1,10 @@
 package com.jdom.bodycomposition.web;
 
-import com.jdom.bodycomposition.domain.YahooStockTicker;
+import com.jdom.bodycomposition.domain.Stock;
 import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario;
 import com.jdom.bodycomposition.domain.algorithm.Portfolio;
-import com.jdom.bodycomposition.service.YahooStockTickerDataDao;
-import com.jdom.bodycomposition.service.YahooStockTickerService;
+import com.jdom.bodycomposition.service.DailySecurityDataDao;
+import com.jdom.bodycomposition.service.SecurityService;
 import com.jdom.util.TimeUtil;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
@@ -25,10 +25,10 @@ public class HomePage extends WebPage {
    private static final long serialVersionUID = 1L;
 
    @SpringBean
-   private YahooStockTickerService bodyCompositionService;
+   private SecurityService bodyCompositionService;
 
    @SpringBean
-   private YahooStockTickerDataDao yahooStockTickerDataDao;
+   private DailySecurityDataDao dailySecurityDataDao;
 
    IModel<AlgorithmScenario> scenarioModel = new Model<>();
 
@@ -40,7 +40,7 @@ public class HomePage extends WebPage {
    public HomePage(final PageParameters parameters) {
 
       AlgorithmScenario algorithmScenario = new AlgorithmScenario();
-      algorithmScenario.setStartPortfolio(new Portfolio(500000L, 495L));
+      algorithmScenario.setInitialPortfolio(new Portfolio(500000L, 495L));
       algorithmScenario.setStartDate(new Date(TimeUtil.currentTimeMillis() - TimeUtil.MILLIS_PER_YEAR));
       algorithmScenario.setEndDate(TimeUtil.newDate());
       scenarioModel.setObject(algorithmScenario);
@@ -48,19 +48,19 @@ public class HomePage extends WebPage {
       final AjaxLink<Void> updateTickerData = new AjaxLink<Void>("updateTickerData") {
          @Override
          public void onClick(AjaxRequestTarget target) {
-            List<YahooStockTicker> tickers = bodyCompositionService.getTickers();
+            List<Stock> tickers = bodyCompositionService.getStocks();
 
             int totalTickersToUpdate = tickers.size();
             int numberUpdated = 0;
-            for (YahooStockTicker ticker : tickers) {
+            for (Stock ticker : tickers) {
                try {
                   bodyCompositionService.updateHistoryData(ticker);
                } catch (Exception e) {
-                  log.error("Unable to update ticker [" + ticker.getTicker() + "]:", e);
+                  log.error("Unable to update ticker [" + ticker.getSymbol() + "]:", e);
                }
 
                numberUpdated++;
-               log.info(String.format("Updated ticker: %s, %s/%s", ticker.getTicker(), numberUpdated, totalTickersToUpdate));
+               log.info(String.format("Updated ticker: %s, %s/%s", ticker.getSymbol(), numberUpdated, totalTickersToUpdate));
             }
          }
       };

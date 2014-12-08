@@ -14,14 +14,14 @@ import javax.transaction.Transactional
 @ContextConfiguration(classes = [StocksContext.class])
 @Transactional
 @TransactionConfiguration(defaultRollback = true)
-class SimpleYahooStockTickerServiceSpec extends Specification {
+class SimpleSecurityServiceSpec extends Specification {
 
-    @Autowired YahooStockTickerService service
+    @Autowired SecurityService service
 
     def 'should return all stock tickers'() {
 
         when: 'all tickers are retrieved'
-        def results = service.tickers
+        def results = service.stocks
         def actualSize = results.size()
 
         then: 'the correct number of results were returned'

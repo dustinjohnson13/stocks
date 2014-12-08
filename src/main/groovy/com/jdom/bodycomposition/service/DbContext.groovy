@@ -1,5 +1,5 @@
 package com.jdom.bodycomposition.service
-import com.jdom.bodycomposition.domain.YahooStockTicker
+import com.jdom.bodycomposition.domain.Stock
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -29,7 +29,7 @@ class DbContext {
     public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
-        em.setPackagesToScan(YahooStockTicker.class.package.name);
+        em.setPackagesToScan(Stock.class.package.name);
 
         JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         em.setJpaVendorAdapter(vendorAdapter);

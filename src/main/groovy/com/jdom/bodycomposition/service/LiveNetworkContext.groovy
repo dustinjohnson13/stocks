@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Profile
 @Configuration
 class LiveNetworkContext {
     @Bean
-    public YahooStockTickerHistoryDownloader downloader() {
-        return new SimpleYahooStockTickerHistoryDownloader()
+    public DailySecurityDataDownloader downloader() {
+        return new YahooDailySecurityDataDownloader()
     }
 }
