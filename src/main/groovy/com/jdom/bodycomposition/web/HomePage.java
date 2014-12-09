@@ -3,7 +3,7 @@ package com.jdom.bodycomposition.web;
 import com.jdom.bodycomposition.domain.Stock;
 import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario;
 import com.jdom.bodycomposition.domain.algorithm.Portfolio;
-import com.jdom.bodycomposition.domain.algorithm.TestMsftAlgorithm;
+import com.jdom.bodycomposition.domain.algorithm.impl.TestMsftAlgorithm;
 import com.jdom.bodycomposition.service.DailySecurityDataDao;
 import com.jdom.bodycomposition.service.SecurityService;
 import com.jdom.util.TimeUtil;

@@ -8,7 +8,7 @@ import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.algorithm.Position
 import com.jdom.bodycomposition.domain.algorithm.SellTransaction
-import com.jdom.bodycomposition.domain.algorithm.TestMsftAlgorithm
+import com.jdom.bodycomposition.domain.algorithm.impl.TestMsftAlgorithm
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration

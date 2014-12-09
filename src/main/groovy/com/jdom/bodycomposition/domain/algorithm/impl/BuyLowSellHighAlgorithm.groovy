@@ -1,10 +1,16 @@
-package com.jdom.bodycomposition.domain.algorithm
+package com.jdom.bodycomposition.domain.algorithm.impl
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
+import com.jdom.bodycomposition.domain.algorithm.Algorithm
+import com.jdom.bodycomposition.domain.algorithm.BuyTransaction
+import com.jdom.bodycomposition.domain.algorithm.Portfolio
+import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction
+import com.jdom.bodycomposition.domain.algorithm.SellTransaction
+
 /**
  * Created by djohnson on 12/6/14.
  */
-class TestMsftAlgorithm implements Algorithm {
+class BuyLowSellHighAlgorithm implements Algorithm {
 
     @Override
     boolean includeSecurity(final BaseSecurity ticker) {
