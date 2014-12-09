@@ -4,7 +4,7 @@ import static com.jdom.bodycomposition.web.StocksTester.StocksFormTester
 
 import com.jdom.bodycomposition.service.MockDailySecurityDataDownloader
 import com.jdom.bodycomposition.service.SpringProfiles
-import com.jdom.bodycomposition.service.StocksContext
+import com.jdom.bodycomposition.service.StocksServiceContext
 import com.jdom.util.TimeUtil
 import com.jdom.util.TimeUtilHelper
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,7 +14,7 @@ import org.springframework.test.context.ContextConfiguration
 import spock.lang.Specification
 
 @ActiveProfiles(SpringProfiles.TEST)
-@ContextConfiguration(classes = [StocksContext.class])
+@ContextConfiguration(classes = [StocksServiceContext.class])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class HomePageSpec extends Specification {
 

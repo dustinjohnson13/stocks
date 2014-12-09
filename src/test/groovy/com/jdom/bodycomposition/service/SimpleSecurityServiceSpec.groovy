@@ -25,7 +25,7 @@ import static com.jdom.util.TimeUtil.dateFromDashString
  * Created by djohnson on 11/15/14.
  */
 @ActiveProfiles(SpringProfiles.TEST)
-@ContextConfiguration(classes = [StocksContext.class])
+@ContextConfiguration(classes = [StocksServiceContext.class])
 @Transactional
 @TransactionConfiguration(defaultRollback = true)
 class SimpleSecurityServiceSpec extends Specification {

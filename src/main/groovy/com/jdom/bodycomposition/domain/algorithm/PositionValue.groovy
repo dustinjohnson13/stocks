@@ -5,7 +5,7 @@ import groovy.transform.EqualsAndHashCode
  * Created by djohnson on 12/7/14.
  */
 @EqualsAndHashCode(includes = 'position')
-class PositionValue {
+class PositionValue implements Serializable {
     final Position position
     final Date date
     final long price

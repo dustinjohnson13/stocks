@@ -19,7 +19,7 @@ ext {
     commonsDbcpVersion = '1.4'
     wicketVersion = '7.0.0-M4'
     slf4jVersion = '1.7.7'
-    log4jVersion = '1.2.17'
+    logbackVersion = '1.1.2'
     groovyVersion = '2.3.6' // This must match the version shipped with Gradle
     hibernateVersion = '4.3.7.Final'
     mysqlVersion = '5.1.34'
@@ -38,8 +38,7 @@ ext {
                 "mysql:mysql-connector-java:$mysqlVersion"
           ],
           logging : [
-                "org.slf4j:slf4j-log4j12:$slf4jVersion",
-                "log4j:log4j:$log4jVersion"
+                "ch.qos.logback:logback-classic:$logbackVersion"
           ],
           spock   : [
                 "org.spockframework:spock-core:$spockVersion",

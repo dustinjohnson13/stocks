@@ -5,7 +5,7 @@ import com.jdom.util.MathUtil
 /**
  * Created by djohnson on 12/7/14.
  */
-class PortfolioValue {
+class PortfolioValue implements Serializable {
     final Portfolio portfolio
     final Date date
     final Set<PositionValue> positions

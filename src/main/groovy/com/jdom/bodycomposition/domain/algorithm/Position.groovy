@@ -10,7 +10,7 @@ import groovy.transform.ToString
  */
 @ToString
 @EqualsAndHashCode(includes = ['security'])
-class Position {
+class Position implements Serializable {
 
     final BaseSecurity security
 

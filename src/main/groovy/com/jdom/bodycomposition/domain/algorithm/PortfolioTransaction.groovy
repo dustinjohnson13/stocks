@@ -2,7 +2,7 @@ package com.jdom.bodycomposition.domain.algorithm
 /**
  * Created by djohnson on 12/6/14.
  */
-interface PortfolioTransaction {
+interface PortfolioTransaction extends Serializable {
     Portfolio apply(Portfolio portfolio)
 
     String getAction()
