@@ -1,10 +1,6 @@
 package com.jdom.bodycomposition.web
-
-import static com.jdom.bodycomposition.web.StocksTester.StocksFormTester
-
 import com.jdom.bodycomposition.service.MockDailySecurityDataDownloader
 import com.jdom.bodycomposition.service.SpringProfiles
-import com.jdom.bodycomposition.service.StocksServiceContext
 import com.jdom.util.TimeUtil
 import com.jdom.util.TimeUtilHelper
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,8 +9,10 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import spock.lang.Specification
 
+import static com.jdom.bodycomposition.web.StocksTester.StocksFormTester
+
 @ActiveProfiles(SpringProfiles.TEST)
-@ContextConfiguration(classes = [StocksServiceContext.class])
+@ContextConfiguration(classes = [StocksWebContext.class])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class HomePageSpec extends Specification {
 
