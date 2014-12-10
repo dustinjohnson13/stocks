@@ -22,7 +22,7 @@ class HomePageSpec extends Specification {
     @Autowired
     MockDailySecurityDataDownloader historyDownloader
 
-    StocksTester tester;
+    StocksTester tester
 
     HomePage page
 

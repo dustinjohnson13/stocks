@@ -35,7 +35,8 @@ CREATE TABLE `security` (
   `category` varchar(50) DEFAULT NULL,
   `country` varchar(50) NOT NULL,
   `category_number` int(3) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `symbol_exchange` (`symbol`,`exchange`)
 ) ENGINE=InnoDB AUTO_INCREMENT=16384 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

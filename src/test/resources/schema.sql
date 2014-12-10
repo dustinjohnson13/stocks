@@ -1,3 +1,7 @@
+DROP TABLE IF EXISTS security_daily_metrics;
+DROP TABLE IF EXISTS security_daily_data;
+DROP TABLE IF EXISTS security;
+
 CREATE TABLE IF NOT EXISTS security(
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (start with 1),
     symbol VARCHAR(16) NOT NULL,
@@ -5,7 +9,8 @@ CREATE TABLE IF NOT EXISTS security(
     exchange VARCHAR(3) NOT NULL,
     category VARCHAR(50) DEFAULT NULL,
     country VARCHAR(50) NOT NULL,
-    category_number INTEGER NOT NULL
+    category_number INTEGER NOT NULL,
+    CONSTRAINT unique_symbol_exchange UNIQUE (symbol, exchange)
 );
 
 CREATE TABLE IF NOT EXISTS security_daily_data(

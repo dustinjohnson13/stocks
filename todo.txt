@@ -1,0 +1,9 @@
+- Order engine (separate order submittal and transaction code)
+- Display portfolio value in intervals over the time period, e.g. each week, month, year, etc.
+- Add checkbox options for default market trends, e.g. downward trend period, flat market, and upward trend
+- Display warnings as portfolio value decreases below thresholds, e.g. (75%, 50%, 25%)
+- Incorporate sell short and buy to cover orders
+
+Longer term:
+- Add bond/ETF/etc. securities
+- Incorporate dividends, both payout dates/values and ex-dividend dates which affect ownership
