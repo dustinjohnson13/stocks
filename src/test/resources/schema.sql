@@ -20,3 +20,12 @@ CREATE TABLE IF NOT EXISTS security_daily_data(
   adjusted_close INTEGER NOT NULL,
   CONSTRAINT fk_security_id FOREIGN KEY (security_id) REFERENCES security(id)
 );
+
+CREATE TABLE IF NOT EXISTS security_daily_metrics(
+  id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (start with 1),
+  fifty_two_week_high INTEGER NOT NULL,
+  fifty_two_week_low INTEGER NOT NULL,
+  date date NOT NULL,
+  CONSTRAINT fk_fifty_two_week_high FOREIGN KEY (fifty_two_week_high) REFERENCES security_daily_data(id),
+  CONSTRAINT fk_fifty_two_week_low FOREIGN KEY (fifty_two_week_low) REFERENCES security_daily_data(id)
+);

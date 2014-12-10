@@ -1,7 +1,7 @@
 package com.jdom.bodycomposition.service
-
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
+import com.jdom.bodycomposition.domain.DailySecurityMetrics
 import com.jdom.bodycomposition.domain.Stock
 import com.jdom.bodycomposition.domain.algorithm.Algorithm
 import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario
@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service
 
 import javax.transaction.Transactional
 
+import static com.jdom.util.TimeUtil.dashString
+
 /**
  * Created by djohnson on 11/14/14.
  */
@@ -40,11 +42,66 @@ class SimpleSecurityService implements SecurityService {
     DailySecurityDataDao dailySecurityDataDao
 
     @Autowired
+    DailySecurityMetricsDao dailySecurityMetricsDao
+
+    @Autowired
     DailySecurityDataDownloader historyDownloader
 
     @Override
     List<Stock> getStocks() {
         return stockDao.findAll()
+    }
+
+    @Override
+    DailySecurityData save(final DailySecurityData dailySecurityData) {
+        def savedDailySecurityData = dailySecurityDataDao.save(dailySecurityData)
+        def dailySecurityMetrics = calculateDailyMetrics(savedDailySecurityData)
+        dailySecurityMetricsDao.save(dailySecurityMetrics)
+        return savedDailySecurityData
+    }
+
+    private DailySecurityMetrics calculateDailyMetrics(final DailySecurityData dailySecurityData) {
+        def dailySecurityDataDate = dailySecurityData.date
+        def cal = Calendar.getInstance()
+        cal.setTime(dailySecurityDataDate)
+        cal.add(Calendar.WEEK_OF_YEAR, -52)
+        def fiftyTwoWeeksAgo = cal.getTime()
+
+        log.info("Searching for the 52 week high and low for security [${dailySecurityData.security.symbol}] " +
+              "using date range ${dashString(dailySecurityDataDate)} to ${dashString(fiftyTwoWeeksAgo)}.")
+
+        Page<DailySecurityData> highPage = dailySecurityDataDao.findBySecurityAndDateBetweenOrderByHighDesc(
+              dailySecurityData.security, fiftyTwoWeeksAgo, dailySecurityDataDate, new PageRequest(0, 1))
+
+        def fiftyTwoWeekHigh;
+        if (highPage.hasContent()) {
+            fiftyTwoWeekHigh = highPage.getContent()[0]
+        } else {
+            log.error("No results for the 52 week high value!  Defaulting to use today, but that should have been found " +
+                  "in the query!")
+
+            fiftyTwoWeekHigh = dailySecurityData
+        }
+
+        Page<DailySecurityData> lowPage = dailySecurityDataDao.findBySecurityAndDateBetweenOrderByLowAsc(
+              dailySecurityData.security, fiftyTwoWeeksAgo, dailySecurityDataDate, new PageRequest(0, 1))
+        def fiftyTwoWeekLow;
+        if (lowPage.hasContent()) {
+            fiftyTwoWeekLow = lowPage.getContent()[0]
+        } else {
+            log.error("No results for the 52 week low value!  Defaulting to use today, but that should have been found " +
+                  "in the query!")
+
+            fiftyTwoWeekLow = dailySecurityData
+
+        }
+        return new DailySecurityMetrics(date: dailySecurityDataDate,
+              fiftyTwoWeekHigh: fiftyTwoWeekHigh, fiftyTwoWeekLow: fiftyTwoWeekLow)
+    }
+
+    @Override
+    DailySecurityMetrics findDailySecurityMetricsBySecurityAndDate(final BaseSecurity security, final Date date) {
+        return dailySecurityMetricsDao.findByDateAndFiftyTwoWeekHighSecurity(date, security)
     }
 
     @Override
@@ -75,7 +132,7 @@ class SimpleSecurityService implements SecurityService {
         log.info("Parsed ${parsedData.size()} entities for security ${security.symbol}")
 
         for (DailySecurityData data : parsedData) {
-            stockDao.save(data)
+            save(data)
         }
         log.info("Inserted ${parsedData.size()} entities for security ${security.symbol}")
     }
@@ -147,6 +204,11 @@ class SimpleSecurityService implements SecurityService {
             }
         }
         return new PortfolioValue(portfolio, date, positionValues)
+    }
+
+    @Override
+    BaseSecurity findSecurityBySymbol(final String symbol) {
+        return stockDao.findBySymbol(symbol)
     }
 
 }

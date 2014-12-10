@@ -9,5 +9,5 @@ import org.springframework.data.repository.PagingAndSortingRepository;
  */
 @NoRepositoryBean
 public interface BaseSecurityDao<T extends BaseSecurity> extends PagingAndSortingRepository<T, Long> {
-
+   T findBySymbol(final String symbol);
 }

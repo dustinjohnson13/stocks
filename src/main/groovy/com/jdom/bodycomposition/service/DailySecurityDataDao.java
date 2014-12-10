@@ -30,4 +30,10 @@ public interface DailySecurityDataDao extends PagingAndSortingRepository<DailySe
    List<Stock> findBySecurityAndDateBetween(final BaseSecurity security, final Date start, final Date end);
 
    DailySecurityData findBySecurityAndDate(final BaseSecurity security, final Date date);
+
+   Page<DailySecurityData> findBySecurityAndDateBetweenOrderByHighDesc(BaseSecurity security, final Date start,
+                                                                       final Date end, Pageable pageable);
+
+   Page<DailySecurityData> findBySecurityAndDateBetweenOrderByLowAsc(BaseSecurity security, final Date start,
+                                                                       final Date end, Pageable pageable);
 }

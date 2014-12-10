@@ -1,5 +1,8 @@
 package com.jdom.bodycomposition.service
+
 import com.jdom.bodycomposition.domain.BaseSecurity
+import com.jdom.bodycomposition.domain.DailySecurityData
+import com.jdom.bodycomposition.domain.DailySecurityMetrics
 import com.jdom.bodycomposition.domain.Stock
 import com.jdom.bodycomposition.domain.algorithm.Algorithm
 import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario
@@ -21,6 +24,7 @@ import javax.transaction.Transactional
 import static com.jdom.util.MathUtil.toMoney
 import static com.jdom.util.MathUtil.toPercentage
 import static com.jdom.util.TimeUtil.dateFromDashString
+
 /**
  * Created by djohnson on 11/15/14.
  */
@@ -111,14 +115,14 @@ class SimpleSecurityServiceSpec extends Specification {
         service.profileAlgorithm(scenario)
 
         then: 'each security is evaluated for the first day'
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july15th2014 && it.security.symbol == 'EBF'} )
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july15th2014 && it.security.symbol == 'GOOG'} )
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july15th2014 && it.security.symbol == 'MSFT'} )
+        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july15th2014 && it.security.symbol == 'EBF' })
+        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july15th2014 && it.security.symbol == 'GOOG' })
+        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july15th2014 && it.security.symbol == 'MSFT' })
 
         then: 'each security is evaluated for the next day'
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july16th2014 && it.security.symbol == 'EBF'} )
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july16th2014 && it.security.symbol == 'GOOG'} )
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july16th2014 && it.security.symbol == 'MSFT'} )
+        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july16th2014 && it.security.symbol == 'EBF' })
+        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july16th2014 && it.security.symbol == 'GOOG' })
+        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july16th2014 && it.security.symbol == 'MSFT' })
     }
 
     @Unroll
@@ -149,4 +153,39 @@ class SimpleSecurityServiceSpec extends Specification {
         dateFromDashString('2014-12-06') | toMoney('$787.75') // Saturday, use previous day's value
         dateFromDashString('1970-01-01') | toMoney('$457.33') // No data present, doesn't include position, only cash
     }
+
+    @Unroll
+    def 'should insert daily metrics when daily security data is inserted, 52WkHigh #expected52WkHighDate, 52WkLow #expected52WkLowDate'() {
+        def msft = service.findSecurityBySymbol('MSFT')
+
+        given: 'a new daily security data is persisted'
+        DailySecurityData dailyData = new DailySecurityData(security: msft, date: dateFromDashString('2014-12-08'),
+              open: toMoney('$48.82'), close: toMoney('$48.42'), high: toMoney(high), low: toMoney(low),
+              volume: 26080000, adjustedClose: toMoney('$48.42'))
+
+        when: 'new security daily data is inserted'
+        service.save(dailyData)
+
+        then: 'a new daily metrics entry was inserted'
+        DailySecurityMetrics metrics = service.findDailySecurityMetricsBySecurityAndDate(msft, dailyData.date)
+
+        and: 'the daily metrics entry has the correct values'
+        metrics.id != null
+        metrics.fiftyTwoWeekHigh != null
+        metrics.fiftyTwoWeekHigh.date == dateFromDashString(expected52WkHighDate)
+        metrics.fiftyTwoWeekHigh.high == toMoney(expected52WkHighValue)
+        metrics.fiftyTwoWeekLow != null
+        metrics.fiftyTwoWeekLow.date == dateFromDashString(expected52WkLowDate)
+        metrics.fiftyTwoWeekLow.low == toMoney(expected52WkLowValue)
+        metrics.date == dailyData.date
+
+        where:
+        high     | low      | expected52WkHighDate | expected52WkHighValue | expected52WkLowDate | expected52WkLowValue
+        '$48.97' | '$48.38' | '2014-11-14'         | '$50.05'              | '2014-01-14'        | '$34.63' // Today neither 52 week high or low
+        '$50.06' | '$48.38' | '2014-12-08'         | '$50.06'              | '2014-01-14'        | '$34.63' // Today 52 week high
+        '$48.97' | '$34.62' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.62' // Today 52 week low
+        '$50.05' | '$48.38' | '2014-12-08'         | '$50.05'              | '2014-01-14'        | '$34.63' // Today matches 52 week high
+        '$48.97' | '$34.63' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.63' // Today matches 52 week low
+    }
+
 }

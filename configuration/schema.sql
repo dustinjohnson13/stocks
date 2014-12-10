@@ -58,6 +58,17 @@ CREATE TABLE `security_daily_data` (
 ALTER TABLE security_daily_data ADD CONSTRAINT security_date_idx
 UNIQUE (security_id, date);
 
+DROP TABLE IF EXISTS `security_daily_metrics`;
+CREATE TABLE `security_daily_metrics` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `date` date NOT NULL,
+  `fifty_two_week_high` int(11) NOT NULL,
+  `fifty_two_week_low` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (fifty_two_week_high) REFERENCES security_daily_data(id),
+  FOREIGN KEY (fifty_two_week_low) REFERENCES security_daily_data(id)
+) ENGINE=InnoDB AUTO_INCREMENT=16384 DEFAULT CHARSET=latin1;
+
 --
 -- Dumping data for table `security`
 --
