@@ -10,6 +10,7 @@ import com.jdom.bodycomposition.service.StockDao
 import com.jdom.bodycomposition.service.StocksServiceContext
 import com.jdom.util.TimeUtil
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.transaction.TransactionConfiguration
@@ -27,6 +28,7 @@ import static com.jdom.util.TimeUtil.dateFromDashString
 @ContextConfiguration(classes = [StocksServiceContext.class])
 @Transactional
 @TransactionConfiguration(defaultRollback = true)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class MarketEnginesSpec extends Specification {
 
     @Autowired

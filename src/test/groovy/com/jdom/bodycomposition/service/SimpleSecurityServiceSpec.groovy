@@ -11,6 +11,7 @@ import com.jdom.bodycomposition.domain.algorithm.Position
 import com.jdom.bodycomposition.domain.algorithm.SellTransaction
 import com.jdom.bodycomposition.domain.algorithm.impl.TestMsftAlgorithm
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.transaction.TransactionConfiguration
@@ -29,6 +30,7 @@ import static com.jdom.util.TimeUtil.dateFromDashString
 @ContextConfiguration(classes = [StocksServiceContext.class])
 @Transactional
 @TransactionConfiguration(defaultRollback = true)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class SimpleSecurityServiceSpec extends Specification {
 
     @Autowired

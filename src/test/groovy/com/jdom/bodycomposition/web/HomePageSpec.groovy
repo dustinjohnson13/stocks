@@ -7,12 +7,17 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.transaction.TransactionConfiguration
 import spock.lang.Specification
+
+import javax.transaction.Transactional
 
 import static com.jdom.bodycomposition.web.StocksTester.StocksFormTester
 
 @ActiveProfiles(SpringProfiles.TEST)
 @ContextConfiguration(classes = [StocksWebContext.class])
+@Transactional
+@TransactionConfiguration(defaultRollback = true)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class HomePageSpec extends Specification {
 

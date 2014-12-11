@@ -1,6 +1,4 @@
-DROP TABLE IF EXISTS security_daily_metrics;
-DROP TABLE IF EXISTS security_daily_data;
-DROP TABLE IF EXISTS security;
+TRUNCATE SCHEMA public AND COMMIT;
 
 CREATE TABLE IF NOT EXISTS security(
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (start with 1),
