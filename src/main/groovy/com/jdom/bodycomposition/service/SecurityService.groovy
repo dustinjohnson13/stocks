@@ -3,7 +3,7 @@ import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.DailySecurityMetrics
 import com.jdom.bodycomposition.domain.Stock
-import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario
+import com.jdom.bodycomposition.domain.market.MarketReplay
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 
@@ -15,7 +15,7 @@ interface SecurityService {
 
     void updateHistoryData(BaseSecurity security) throws FileNotFoundException
 
-    AlgorithmScenario profileAlgorithm(AlgorithmScenario scenario)
+    MarketReplay profileAlgorithm(MarketReplay scenario)
 
     PortfolioValue portfolioValue(Portfolio portfolio, Date date)
 

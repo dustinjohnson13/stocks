@@ -1,6 +1,6 @@
 package com.jdom.bodycomposition.web;
 
-import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario;
+import com.jdom.bodycomposition.domain.market.MarketReplay;
 import com.jdom.bodycomposition.domain.algorithm.Portfolio;
 import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction;
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue;
@@ -33,11 +33,11 @@ public class AlgorithmProfilePanel extends Panel {
    @SpringBean
    private SecurityService securityService;
 
-   public AlgorithmProfilePanel(final String id, final IModel<AlgorithmScenario> algorithmScenarioModel) {
+   public AlgorithmProfilePanel(final String id, final IModel<MarketReplay> algorithmScenarioModel) {
       super(id, algorithmScenarioModel);
       setOutputMarkupId(true);
 
-      Form<AlgorithmScenario> form = new Form<>("form", new CompoundPropertyModel<AlgorithmScenario>(algorithmScenarioModel));
+      Form<MarketReplay> form = new Form<>("form", new CompoundPropertyModel<MarketReplay>(algorithmScenarioModel));
       add(form);
 
       DateTextField startDate = new DateTextField("startDate");
@@ -54,9 +54,9 @@ public class AlgorithmProfilePanel extends Panel {
          @Override
          protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
 
-            AlgorithmScenario scenario = algorithmScenarioModel.getObject();
+            MarketReplay scenario = algorithmScenarioModel.getObject();
             scenario.getTransactions().clear();
-            AlgorithmScenario result = securityService.profileAlgorithm(scenario);
+            MarketReplay result = securityService.profileAlgorithm(scenario);
 
             target.add(AlgorithmProfilePanel.this);
          }
@@ -118,7 +118,7 @@ public class AlgorithmProfilePanel extends Panel {
       resultPortfolio.add(new Label("marketValue", new Model<String>() {
          @Override
          public String getObject() {
-            AlgorithmScenario scenario = algorithmScenarioModel.getObject();
+            MarketReplay scenario = algorithmScenarioModel.getObject();
             final PortfolioValue resultPortfolio = scenario.getResultPortfolio();
 
             if (resultPortfolio == null) {

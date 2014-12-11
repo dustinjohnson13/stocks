@@ -1,12 +1,10 @@
 package com.jdom.bodycomposition.service
 
-import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.DailySecurityMetrics
 import com.jdom.bodycomposition.domain.Stock
-import com.jdom.bodycomposition.domain.algorithm.Algorithm
-import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario
 import com.jdom.bodycomposition.domain.algorithm.BuyTransaction
+import com.jdom.bodycomposition.domain.market.MarketReplay
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.algorithm.Position
@@ -24,7 +22,6 @@ import javax.transaction.Transactional
 import static com.jdom.util.MathUtil.toMoney
 import static com.jdom.util.MathUtil.toPercentage
 import static com.jdom.util.TimeUtil.dateFromDashString
-
 /**
  * Created by djohnson on 11/15/14.
  */
@@ -64,13 +61,13 @@ class SimpleSecurityServiceSpec extends Specification {
         Portfolio initialPortfolio = new Portfolio(toMoney('$200'), toMoney('$4.95'))
 
         and: 'purchasing/selling MSFT stock between 11/27/2003 and 07/16/2010'
-        AlgorithmScenario scenario = new AlgorithmScenario(initialPortfolio: initialPortfolio,
+        MarketReplay scenario = new MarketReplay(initialPortfolio: initialPortfolio,
               algorithm: new TestMsftAlgorithm(),
               startDate: dateFromDashString('2003-11-26'),
               endDate: dateFromDashString('2010-07-16'))
 
         when: 'the algorithm is profiled'
-        AlgorithmScenario result = service.profileAlgorithm(scenario)
+        MarketReplay result = service.profileAlgorithm(scenario)
         PortfolioValue resultPortfolio = result.resultPortfolio
 
         then: 'the result contains the correct amount of cash'
@@ -94,35 +91,6 @@ class SimpleSecurityServiceSpec extends Specification {
 
         and: 'the portfolio value change is correct'
         result.valueChangePercent == toPercentage('-42.18%')
-    }
-
-    def 'should evaluate each included security for a day before continuing to the next day'() {
-
-        Portfolio initialPortfolio = new Portfolio(toMoney('$200'), toMoney('$5'))
-        def july15th2014 = dateFromDashString('2014-07-15')
-        def july16th2014 = dateFromDashString('2014-07-16')
-
-        given: 'an algorithm including both MSFT, EBF, and GOOG securities'
-        Algorithm algorithm = Mock()
-        _ * algorithm.includeSecurity(_ as BaseSecurity) >> { BaseSecurity security -> return ['MSFT', 'EBF', 'GOOG'].contains(security.symbol) }
-
-        when: 'the algorithm is profiled over two days'
-        AlgorithmScenario scenario = new AlgorithmScenario(initialPortfolio: initialPortfolio,
-              algorithm: algorithm,
-              startDate: july15th2014,
-              endDate: july16th2014)
-
-        service.profileAlgorithm(scenario)
-
-        then: 'each security is evaluated for the first day'
-        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july15th2014 && it.security.symbol == 'EBF' })
-        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july15th2014 && it.security.symbol == 'GOOG' })
-        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july15th2014 && it.security.symbol == 'MSFT' })
-
-        then: 'each security is evaluated for the next day'
-        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july16th2014 && it.security.symbol == 'EBF' })
-        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july16th2014 && it.security.symbol == 'GOOG' })
-        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july16th2014 && it.security.symbol == 'MSFT' })
     }
 
     @Unroll

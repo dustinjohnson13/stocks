@@ -1,7 +1,6 @@
 package com.jdom.bodycomposition.service;
 
 import com.jdom.bodycomposition.domain.BaseSecurity;
-import com.jdom.bodycomposition.domain.Stock;
 import com.jdom.bodycomposition.domain.DailySecurityData;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,23 +16,23 @@ import java.util.List;
 @Repository
 public interface DailySecurityDataDao extends PagingAndSortingRepository<DailySecurityData, Long> {
 
-   List<DailySecurityData> findBySecurity(BaseSecurity security);
+    List<DailySecurityData> findBySecurity(BaseSecurity security);
 
-   Page<DailySecurityData> findBySecurityOrderByDateDesc(BaseSecurity security, Pageable pageable);
+    Page<DailySecurityData> findBySecurityOrderByDateDesc(BaseSecurity security, Pageable pageable);
 
-   Page<DailySecurityData> findBySecurityAndDateBetweenOrderByDateDesc(BaseSecurity security, final Date start,
-                                                                       final Date end, Pageable pageable);
+    Page<DailySecurityData> findBySecurityAndDateBetweenOrderByDateDesc(BaseSecurity security, final Date start,
+                                                                        final Date end, Pageable pageable);
 
-   Page<DailySecurityData> findBySecurityInAndDateBetweenOrderByDateAsc(List<? extends BaseSecurity> securities, final Date start,
-                                                                       final Date end, Pageable pageable);
+    Page<DailySecurityData> findBySecurityInAndDateBetweenOrderByDateAsc(List<? extends BaseSecurity> securities, final Date start,
+                                                                         final Date end, Pageable pageable);
 
-   List<Stock> findBySecurityAndDateBetween(final BaseSecurity security, final Date start, final Date end);
+    List<DailySecurityData> findBySecurityInAndDate(List<? extends BaseSecurity> securities, final Date date);
 
-   DailySecurityData findBySecurityAndDate(final BaseSecurity security, final Date date);
+    DailySecurityData findBySecurityAndDate(final BaseSecurity security, final Date date);
 
-   Page<DailySecurityData> findBySecurityAndDateBetweenOrderByHighDesc(BaseSecurity security, final Date start,
-                                                                       final Date end, Pageable pageable);
+    Page<DailySecurityData> findBySecurityAndDateBetweenOrderByHighDesc(BaseSecurity security, final Date start,
+                                                                        final Date end, Pageable pageable);
 
-   Page<DailySecurityData> findBySecurityAndDateBetweenOrderByLowAsc(BaseSecurity security, final Date start,
-                                                                       final Date end, Pageable pageable);
+    Page<DailySecurityData> findBySecurityAndDateBetweenOrderByLowAsc(BaseSecurity security, final Date start,
+                                                                      final Date end, Pageable pageable);
 }

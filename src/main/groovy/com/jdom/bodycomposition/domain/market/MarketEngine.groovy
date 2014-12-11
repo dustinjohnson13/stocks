@@ -6,7 +6,7 @@ import javax.transaction.Transaction
  */
 interface MarketEngine extends Market {
 
-    void processDay()
+    void processDay(Date date)
 
     List<Transaction> getTransactions()
 }

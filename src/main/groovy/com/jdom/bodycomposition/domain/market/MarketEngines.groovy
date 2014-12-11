@@ -27,26 +27,20 @@ final class MarketEngines {
     private MarketEngines() {
     }
 
-    static MarketEngine create(final Date start, final Date end, final DailySecurityDataDao dailySecurityDataDao,
+    static MarketEngine create(final DailySecurityDataDao dailySecurityDataDao,
                                Portfolio portfolio) {
-        return new DailyDataDrivenMarketEngine(start, end, dailySecurityDataDao, portfolio)
+        return new DailyDataDrivenMarketEngine(dailySecurityDataDao, portfolio)
     }
 
     private static class DailyDataDrivenMarketEngine implements MarketEngine {
         private final List<OrderRequestImpl> orders = []
-        final Date start
-        final Date end
         final DailySecurityDataDao dailySecurityDataDao
-        private Date currentDate
         Portfolio portfolio
         final List<Transaction> transactions = []
+        Date currentDate
 
-        private DailyDataDrivenMarketEngine(
-                final Date start, final Date end, final DailySecurityDataDao dailySecurityDataDao, Portfolio portfolio) {
-            this.start = start
-            this.end = end
+        private DailyDataDrivenMarketEngine(final DailySecurityDataDao dailySecurityDataDao, Portfolio portfolio) {
             this.dailySecurityDataDao = dailySecurityDataDao
-            this.currentDate = start
             this.portfolio = portfolio
         }
 
@@ -59,14 +53,15 @@ final class MarketEngines {
         }
 
         @Override
-        void processDay() {
+        void processDay(Date date) {
+            currentDate = date
 
             List<OrderRequestImpl> origList = new ArrayList<>(orders)
             orders.clear()
 
             boolean anySecuritiesProcessed = false
             for (OrderRequestImpl order : origList) {
-                def securityData = dailySecurityDataDao.findBySecurityAndDate(order.security, currentDate)
+                def securityData = dailySecurityDataDao.findBySecurityAndDate(order.security, date)
                 if (securityData == null) {
                     continue;
                 } else {
@@ -87,8 +82,6 @@ final class MarketEngines {
             if (!anySecuritiesProcessed) {
                 orders.addAll(origList)
             }
-
-            currentDate = TimeUtil.oneDayLater(currentDate)
         }
 
         @Override

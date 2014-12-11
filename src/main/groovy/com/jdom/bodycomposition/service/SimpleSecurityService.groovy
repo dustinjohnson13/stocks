@@ -3,14 +3,11 @@ import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.DailySecurityMetrics
 import com.jdom.bodycomposition.domain.Stock
-import com.jdom.bodycomposition.domain.algorithm.Algorithm
-import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario
+import com.jdom.bodycomposition.domain.market.MarketReplay
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.algorithm.Position
 import com.jdom.bodycomposition.domain.algorithm.PositionValue
-import com.jdom.bodycomposition.domain.market.MarketEngine
-import com.jdom.bodycomposition.domain.market.MarketEngines
 import com.jdom.util.TimeUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -138,55 +135,9 @@ class SimpleSecurityService implements SecurityService {
     }
 
     @Override
-    AlgorithmScenario profileAlgorithm(final AlgorithmScenario scenario) {
+    MarketReplay profileAlgorithm(final MarketReplay scenario) {
 
-        long start = TimeUtil.currentTimeMillis()
-
-        Portfolio initialPortfolio = scenario.initialPortfolio
-        Algorithm algorithm = scenario.algorithm
-
-        List<Stock> securities = getStocks()
-        for (Iterator<Stock> iter = securities.iterator(); iter.hasNext();) {
-            if (!algorithm.includeSecurity(iter.next())) {
-                iter.remove()
-            }
-        }
-
-        Portfolio portfolio = initialPortfolio
-        def startDate = scenario.startDate
-        def endDate = scenario.endDate
-        MarketEngine marketEngine = MarketEngines.create(startDate, endDate, dailySecurityDataDao, portfolio)
-
-        Pageable ascendingByDate = new PageRequest(0, MAX_DAILY_SECURITY_DATAS_PER_PAGE, Sort.Direction.ASC, 'date')
-        Page<DailySecurityData> page = dailySecurityDataDao.findBySecurityInAndDateBetweenOrderByDateAsc(securities, startDate, endDate, ascendingByDate)
-
-        Date date = startDate
-        marketEngine.processDay() // The first market day must be over in this scenario
-        while (page.hasContent()) {
-
-            for (DailySecurityData dayEntry : page.getContent()) {
-                while (dayEntry.date.after(date)) {
-                    date = TimeUtil.oneDayLater(date)
-                    marketEngine.processDay()
-                }
-                algorithm.actionsForDay(marketEngine, dayEntry)
-            }
-
-
-            if (page.last) {
-                break
-            } else if (page.hasNext()) {
-                page = dailySecurityDataDao.findBySecurityInAndDateBetweenOrderByDateAsc(securities, startDate, endDate, page.nextPageable())
-            }
-        }
-        marketEngine.processDay()
-
-        portfolio = marketEngine.portfolio
-        scenario.transactions = marketEngine.transactions
-        def resultPortfolio = portfolioValue(portfolio, endDate)
-        scenario.resultPortfolio = resultPortfolio
-        scenario.valueChangePercent = resultPortfolio.percentChangeFrom(portfolioValue(initialPortfolio, startDate))
-        scenario.duration = TimeUtil.currentTimeMillis() - start
+        scenario.replay(dailySecurityDataDao, this)
 
         return scenario
     }

@@ -1,7 +1,7 @@
 package com.jdom.bodycomposition.web;
 
 import com.jdom.bodycomposition.domain.Stock;
-import com.jdom.bodycomposition.domain.algorithm.AlgorithmScenario;
+import com.jdom.bodycomposition.domain.market.MarketReplay;
 import com.jdom.bodycomposition.domain.algorithm.Portfolio;
 import com.jdom.bodycomposition.domain.algorithm.impl.TestMsftAlgorithm;
 import com.jdom.bodycomposition.service.DailySecurityDataDao;
@@ -31,7 +31,7 @@ public class HomePage extends WebPage {
    @SpringBean
    private DailySecurityDataDao dailySecurityDataDao;
 
-   IModel<AlgorithmScenario> scenarioModel = new Model<>();
+   IModel<MarketReplay> scenarioModel = new Model<>();
 
    /**
     * Constructor that is invoked when page is invoked without a session.
@@ -40,12 +40,12 @@ public class HomePage extends WebPage {
     */
    public HomePage(final PageParameters parameters) {
 
-      AlgorithmScenario algorithmScenario = new AlgorithmScenario();
-      algorithmScenario.setInitialPortfolio(new Portfolio(500000L, 495L));
-      algorithmScenario.setStartDate(new Date(TimeUtil.currentTimeMillis() - TimeUtil.MILLIS_PER_YEAR));
-      algorithmScenario.setEndDate(TimeUtil.newDate());
-      algorithmScenario.setAlgorithm(new TestMsftAlgorithm());
-      scenarioModel.setObject(algorithmScenario);
+      MarketReplay marketReplay = new MarketReplay();
+      marketReplay.setInitialPortfolio(new Portfolio(500000L, 495L));
+      marketReplay.setStartDate(new Date(TimeUtil.currentTimeMillis() - TimeUtil.MILLIS_PER_YEAR));
+      marketReplay.setEndDate(TimeUtil.newDate());
+      marketReplay.setAlgorithm(new TestMsftAlgorithm());
+      scenarioModel.setObject(marketReplay);
 
       final AjaxLink<Void> updateSecurityDailyData = new AjaxLink<Void>("updateSecurityDailyData") {
          @Override

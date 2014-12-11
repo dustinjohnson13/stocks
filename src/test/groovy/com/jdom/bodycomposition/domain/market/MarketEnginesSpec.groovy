@@ -8,6 +8,7 @@ import com.jdom.bodycomposition.service.DailySecurityDataDao
 import com.jdom.bodycomposition.service.SpringProfiles
 import com.jdom.bodycomposition.service.StockDao
 import com.jdom.bodycomposition.service.StocksServiceContext
+import com.jdom.util.TimeUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
@@ -37,10 +38,13 @@ class MarketEnginesSpec extends Specification {
 
     MarketEngine market
 
+    def currentDay = dateFromDashString('2013-12-01')
+    def nextDay = dateFromDashString('2013-12-02')
+
     def setup() {
         msft = securityDao.findBySymbol('MSFT')
-        market = MarketEngines.create(dateFromDashString('2013-12-02'),
-                dateFromDashString('2013-12-05'), dailySecurityDataDao, new Portfolio(200000l, 495l))
+        market = MarketEngines.create(dailySecurityDataDao, new Portfolio(200000l, 495l))
+        market.processDay(currentDay)
     }
 
     @Unroll
@@ -48,7 +52,7 @@ class MarketEnginesSpec extends Specification {
 
         def order = ('buy' == type) ? Orders.newBuyMarketOrder(10, msft) : Orders.newSellMarketOrder(10, msft)
 
-        given: 'a #type market order submitted before day start'
+        given: 'a #type market order submitted at the end of the day'
         def submittedOrder = market.submit(order)
 
         and: 'the order was submitted successfully'
@@ -56,7 +60,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         when: 'the market processes the next day'
-        market.processDay()
+        market.processDay(nextDay)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is processed'
@@ -84,7 +88,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         when: 'the market processes the next day'
-        market.processDay()
+        market.processDay(nextDay)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is processed'
@@ -124,7 +128,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         when: 'the market processes the next day'
-        market.processDay()
+        market.processDay(nextDay)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is not processed'
@@ -157,15 +161,16 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         then: 'the order is left open for one year'
-        365.times {
-            market.processDay()
+        364.times {
+            currentDay = TimeUtil.oneDayLater(currentDay)
+            market.processDay(currentDay)
 
             def processedOrder = market.getOrder(submittedOrder)
             assert processedOrder.status == OrderStatus.OPEN
         }
 
         and: 'the next day the order is cancelled'
-        market.processDay()
+        market.processDay(TimeUtil.oneDayLater(currentDay))
         def processedOrder = market.getOrder(submittedOrder)
         processedOrder.status == OrderStatus.CANCELLED
 
@@ -176,5 +181,5 @@ class MarketEnginesSpec extends Specification {
     }
 
 //    TODO: Test for rejecting selling shares that aren't owned
-    
+
 }

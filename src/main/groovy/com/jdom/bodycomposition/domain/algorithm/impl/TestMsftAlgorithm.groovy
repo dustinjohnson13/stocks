@@ -20,12 +20,12 @@ class TestMsftAlgorithm implements Algorithm {
     }
 
     @Override
-    void actionsForDay(Market market, final DailySecurityData dayEntry) {
-        if (purchaseDates.contains(TimeUtil.dashString(dayEntry.date))) {
-            market.submit(Orders.newBuyLimitOrder(2, dayEntry.security, 2550, Duration.GTC)) // GTC to work around thanksgiving
+    void actionsForDay(Market market, final List<DailySecurityData> dayEntries, Date currentDate) {
+        if (purchaseDates.contains(TimeUtil.dashString(currentDate))) {
+            market.submit(Orders.newBuyLimitOrder(2, dayEntries.find{ it.security.symbol == 'MSFT' }.security, 2550, Duration.GTC)) // GTC to work around thanksgiving
 //            return [new BuyTransaction(dayEntry.security, dayEntry.date, 2, 2550, portfolio.commissionCost)]
-        } else if (sellDates.contains(TimeUtil.dashString(dayEntry.date))) {
-            market.submit(Orders.newSellLimitOrder(2, dayEntry.security, 2489, Duration.DAY_ORDER))
+        } else if (sellDates.contains(TimeUtil.dashString(currentDate))) {
+            market.submit(Orders.newSellLimitOrder(2, dayEntries.find{ it.security.symbol == 'MSFT' }.security, 2489, Duration.DAY_ORDER))
 //            return [new SellTransaction(dayEntry.security, dayEntry.date, 2, 2489, portfolio.commissionCost)]
         }
     }
