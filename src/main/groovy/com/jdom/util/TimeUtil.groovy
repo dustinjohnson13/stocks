@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat
  * Created by djohnson on 11/15/14.
  */
 class TimeUtil {
+
     static interface Clock {
         long currentTimeMillis()
     }
@@ -46,6 +47,13 @@ class TimeUtil {
         cal.setTime(date)
 
         return calendarAtStartOfDay(cal).getTime()
+    }
+
+    static Date oneDayLater(final Date date) {
+        Calendar cal = Calendar.getInstance()
+        cal.setTime(date)
+        cal.add(Calendar.DAY_OF_YEAR, 1)
+        return cal.getTime()
     }
 
     static Calendar calendarAtStartOfDay(Calendar cal) {

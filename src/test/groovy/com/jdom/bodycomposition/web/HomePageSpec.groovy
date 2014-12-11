@@ -78,18 +78,18 @@ class HomePageSpec extends Specification {
     def 'should profile algorithm on button click'() {
 
         StocksFormTester formTester = tester.newFormTester('algorithmProfilePanel:form')
-        formTester.setValue('startDate', '11/27/2003')
+        formTester.setValue('startDate', '11/26/2003')
         formTester.setValue('endDate', '07/16/2010')
         formTester.setMoney('initialPortfolio.cash', '$200')
-        formTester.setMoney('initialPortfolio.commissionCost', '$5')
+        formTester.setMoney('initialPortfolio.commissionCost', '$4.95')
 
         when: 'the profile algorithm button is clicked'
         formTester.submit('profile')
 
         then: 'the portfolio result was calculated'
-        tester.assertLabel('algorithmProfilePanel:resultPortfolio:resultCash', '$65.56')
+        tester.assertLabel('algorithmProfilePanel:resultPortfolio:resultCash', '$65.86')
 
         and: 'the market value is displayed'
-        tester.assertLabel('algorithmProfilePanel:resultPortfolio:marketValue', '$115.34 (-42.33%)')
+        tester.assertLabel('algorithmProfilePanel:resultPortfolio:marketValue', '$115.64 (-42.18%)')
     }
 }

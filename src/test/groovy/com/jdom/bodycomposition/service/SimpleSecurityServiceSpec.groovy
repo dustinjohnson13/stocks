@@ -52,21 +52,21 @@ class SimpleSecurityServiceSpec extends Specification {
         def MSFT = new Stock(symbol: 'MSFT')
 
         def expectedTransactions = [
-              new BuyTransaction(MSFT, dateFromDashString('2003-11-28'), 2, toMoney('$25.50'), toMoney('$5')),
-              new SellTransaction(MSFT, dateFromDashString('2004-03-18'), 2, toMoney('$24.89'), toMoney('$5')),
-              new BuyTransaction(MSFT, dateFromDashString('2005-05-18'), 2, toMoney('$25.50'), toMoney('$5')),
-              new BuyTransaction(MSFT, dateFromDashString('2010-07-14'), 2, toMoney('$25.50'), toMoney('$5')),
-              new BuyTransaction(MSFT, dateFromDashString('2010-07-15'), 2, toMoney('$25.50'), toMoney('$5')),
-              new SellTransaction(MSFT, dateFromDashString('2010-07-16'), 2, toMoney('$24.89'), toMoney('$5'))
+              new BuyTransaction(MSFT, dateFromDashString('2003-11-28'), 2, toMoney('$25.50'), toMoney('$4.95')),
+              new SellTransaction(MSFT, dateFromDashString('2004-03-18'), 2, toMoney('$24.89'), toMoney('$4.95')),
+              new BuyTransaction(MSFT, dateFromDashString('2005-05-18'), 2, toMoney('$25.50'), toMoney('$4.95')),
+              new BuyTransaction(MSFT, dateFromDashString('2010-07-14'), 2, toMoney('$25.50'), toMoney('$4.95')),
+              new BuyTransaction(MSFT, dateFromDashString('2010-07-15'), 2, toMoney('$25.50'), toMoney('$4.95')),
+              new SellTransaction(MSFT, dateFromDashString('2010-07-16'), 2, toMoney('$24.89'), toMoney('$4.95'))
         ]
 
-        given: 'a portfolio of $200 and a commission of $5'
-        Portfolio initialPortfolio = new Portfolio(toMoney('$200'), toMoney('$5'))
+        given: 'a portfolio of $200 and a commission of $4.95'
+        Portfolio initialPortfolio = new Portfolio(toMoney('$200'), toMoney('$4.95'))
 
         and: 'purchasing/selling MSFT stock between 11/27/2003 and 07/16/2010'
         AlgorithmScenario scenario = new AlgorithmScenario(initialPortfolio: initialPortfolio,
               algorithm: new TestMsftAlgorithm(),
-              startDate: dateFromDashString('2003-11-27'),
+              startDate: dateFromDashString('2003-11-26'),
               endDate: dateFromDashString('2010-07-16'))
 
         when: 'the algorithm is profiled'
@@ -74,7 +74,7 @@ class SimpleSecurityServiceSpec extends Specification {
         PortfolioValue resultPortfolio = result.resultPortfolio
 
         then: 'the result contains the correct amount of cash'
-        resultPortfolio.cash == toMoney('$65.56')
+        resultPortfolio.cash == toMoney('$65.86')
 
         def positions = resultPortfolio.positions
         and: 'the result contains the correct number of positions'
@@ -93,7 +93,7 @@ class SimpleSecurityServiceSpec extends Specification {
         transactions == expectedTransactions
 
         and: 'the portfolio value change is correct'
-        result.valueChangePercent == toPercentage('-42.33%')
+        result.valueChangePercent == toPercentage('-42.18%')
     }
 
     def 'should evaluate each included security for a day before continuing to the next day'() {
@@ -115,14 +115,14 @@ class SimpleSecurityServiceSpec extends Specification {
         service.profileAlgorithm(scenario)
 
         then: 'each security is evaluated for the first day'
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july15th2014 && it.security.symbol == 'EBF' })
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july15th2014 && it.security.symbol == 'GOOG' })
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july15th2014 && it.security.symbol == 'MSFT' })
+        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july15th2014 && it.security.symbol == 'EBF' })
+        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july15th2014 && it.security.symbol == 'GOOG' })
+        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july15th2014 && it.security.symbol == 'MSFT' })
 
         then: 'each security is evaluated for the next day'
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july16th2014 && it.security.symbol == 'EBF' })
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july16th2014 && it.security.symbol == 'GOOG' })
-        1 * algorithm.actionsForDay(_ as Portfolio, { it.date == july16th2014 && it.security.symbol == 'MSFT' })
+        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july16th2014 && it.security.symbol == 'EBF' })
+        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july16th2014 && it.security.symbol == 'GOOG' })
+        1 * algorithm.actionsForDay({it.portfolio == initialPortfolio}, { it.date == july16th2014 && it.security.symbol == 'MSFT' })
     }
 
     @Unroll

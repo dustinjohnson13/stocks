@@ -2,6 +2,10 @@ package com.jdom.bodycomposition.domain.market
 
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
+import com.jdom.bodycomposition.domain.algorithm.BuyTransaction
+import com.jdom.bodycomposition.domain.algorithm.Portfolio
+import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction
+import com.jdom.bodycomposition.domain.algorithm.SellTransaction
 import com.jdom.bodycomposition.domain.market.orders.BuyLimitOrder
 import com.jdom.bodycomposition.domain.market.orders.Duration
 import com.jdom.bodycomposition.domain.market.orders.LimitOrder
@@ -11,16 +15,21 @@ import com.jdom.bodycomposition.domain.market.orders.SellLimitOrder
 import com.jdom.bodycomposition.service.DailySecurityDataDao
 import com.jdom.util.TimeUtil
 
+import javax.transaction.Transaction
+
 /**
  * Created by djohnson on 12/10/14.
  */
 final class MarketEngines {
 
+    private static final long COMMISSION_PRICE = 495l
+
     private MarketEngines() {
     }
 
-    static MarketEngine create(final Date start, final Date end, final DailySecurityDataDao dailySecurityDataDao) {
-        return new DailyDataDrivenMarketEngine(start, end, dailySecurityDataDao)
+    static MarketEngine create(final Date start, final Date end, final DailySecurityDataDao dailySecurityDataDao,
+                               Portfolio portfolio) {
+        return new DailyDataDrivenMarketEngine(start, end, dailySecurityDataDao, portfolio)
     }
 
     private static class DailyDataDrivenMarketEngine implements MarketEngine {
@@ -29,13 +38,16 @@ final class MarketEngines {
         final Date end
         final DailySecurityDataDao dailySecurityDataDao
         private Date currentDate
+        Portfolio portfolio
+        final List<Transaction> transactions = []
 
         private DailyDataDrivenMarketEngine(
-                final Date start, final Date end, final DailySecurityDataDao dailySecurityDataDao) {
+                final Date start, final Date end, final DailySecurityDataDao dailySecurityDataDao, Portfolio portfolio) {
             this.start = start
             this.end = end
             this.dailySecurityDataDao = dailySecurityDataDao
             this.currentDate = start
+            this.portfolio = portfolio
         }
 
         @Override
@@ -76,7 +88,7 @@ final class MarketEngines {
                 orders.addAll(origList)
             }
 
-            currentDate = new Date(currentDate.time + TimeUtil.MILLIS_PER_DAY)
+            currentDate = TimeUtil.oneDayLater(currentDate)
         }
 
         @Override
@@ -85,18 +97,20 @@ final class MarketEngines {
         }
 
         OrderRequestImpl processLimitOrder(OrderRequestImpl order, BuyLimitOrder limitOrder, DailySecurityData securityData) {
-            processLimitOrder(order, limitOrder) {
+            processLimitOrder(order, limitOrder, new BuyTransaction(order.security, currentDate, order.shares, limitOrder.price,
+                    COMMISSION_PRICE)) {
                 limitOrder.price < securityData.low
             }
         }
 
         OrderRequestImpl processLimitOrder(OrderRequestImpl order, SellLimitOrder limitOrder, DailySecurityData securityData) {
-            processLimitOrder(order, limitOrder) {
+            processLimitOrder(order, limitOrder, new SellTransaction(order.security, currentDate, order.shares, limitOrder.price,
+                    COMMISSION_PRICE)) {
                 limitOrder.price > securityData.high
             }
         }
 
-        OrderRequestImpl processLimitOrder(OrderRequestImpl order, LimitOrder limitOrder, Closure<Boolean> unfillable) {
+        OrderRequestImpl processLimitOrder(OrderRequestImpl order, LimitOrder limitOrder, PortfolioTransaction transaction, Closure<Boolean> unfillable) {
             if (unfillable.call()) {
                 if (limitOrder.duration == Duration.DAY_ORDER) {
                     return new OrderRequestImpl(order, OrderStatus.CANCELLED)
@@ -109,6 +123,11 @@ final class MarketEngines {
                 }
                 return order
             }
+
+            // Try to process the transaction now
+            portfolio = transaction.apply(portfolio)
+            transactions.add(transaction)
+
             return new OrderRequestImpl(order, OrderStatus.EXECUTED, limitOrder.price)
         }
 

@@ -1,6 +1,7 @@
 package com.jdom.bodycomposition.domain.market
 
 import com.jdom.bodycomposition.domain.BaseSecurity
+import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.market.orders.Duration
 import com.jdom.bodycomposition.domain.market.orders.Orders
 import com.jdom.bodycomposition.service.DailySecurityDataDao
@@ -39,7 +40,7 @@ class MarketEnginesSpec extends Specification {
     def setup() {
         msft = securityDao.findBySymbol('MSFT')
         market = MarketEngines.create(dateFromDashString('2013-12-02'),
-                dateFromDashString('2013-12-05'), dailySecurityDataDao)
+                dateFromDashString('2013-12-05'), dailySecurityDataDao, new Portfolio(200000l, 495l))
     }
 
     @Unroll
@@ -173,4 +174,7 @@ class MarketEnginesSpec extends Specification {
         'buy'  | 2
         'sell' | 10000
     }
+
+//    TODO: Test for rejecting selling shares that aren't owned
+    
 }
