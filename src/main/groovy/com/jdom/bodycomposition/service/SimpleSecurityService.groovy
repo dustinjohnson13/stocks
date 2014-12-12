@@ -102,6 +102,17 @@ class SimpleSecurityService implements SecurityService {
     }
 
     @Override
+    List<PortfolioValue> portfolioValueCheckpoints(final MarketReplay marketReplay) {
+        List<PortfolioValue> checkpoints = []
+
+        marketReplay.portfolioByDate.each { date, portfolio ->
+            checkpoints.add(portfolioValue(portfolio, date))
+        }
+
+        return checkpoints
+    }
+
+    @Override
     void updateHistoryData(BaseSecurity security) throws FileNotFoundException {
         log.info("Updating history data for security ${security.symbol}")
 

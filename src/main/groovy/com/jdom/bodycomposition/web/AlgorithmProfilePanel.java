@@ -138,5 +138,18 @@ public class AlgorithmProfilePanel extends Panel {
          public void setObject(final String object) {
          }
       }));
+
+//      final IModel<List<? extends PortfolioValue>> portfolioCheckpoints = new LoadableDetachableModel<List<? extends PortfolioValue>>() {
+//         protected List<? extends PortfolioValue> load() {
+//            MarketReplay scenario = algorithmScenarioModel.getObject();
+//            final PortfolioValue resultPortfolio = scenario.getResultPortfolio();
+//
+//            if (resultPortfolio == null) {
+//               return Collections.emptyList();
+//            } else {
+//               return securityService.portfolioValueCheckpoints(scenario);
+//            }
+//         }
+//      };
    }
 }

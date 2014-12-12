@@ -4,6 +4,7 @@ import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.DailySecurityMetrics
 import com.jdom.bodycomposition.domain.Stock
 import com.jdom.bodycomposition.domain.algorithm.BuyTransaction
+import com.jdom.bodycomposition.domain.algorithm.PositionValue
 import com.jdom.bodycomposition.domain.market.MarketReplay
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
@@ -23,6 +24,7 @@ import javax.transaction.Transactional
 import static com.jdom.util.MathUtil.toMoney
 import static com.jdom.util.MathUtil.toPercentage
 import static com.jdom.util.TimeUtil.dateFromDashString
+
 /**
  * Created by djohnson on 11/15/14.
  */
@@ -158,4 +160,40 @@ class SimpleSecurityServiceSpec extends Specification {
         '$48.97' | '$34.63' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.63' // Today matches 52 week low
     }
 
+    def 'should return portfolio value checkpoints'() {
+        def msft = service.findSecurityBySymbol('MSFT')
+
+        def day1 = dateFromDashString('2010-07-14')
+        def day2 = dateFromDashString('2010-07-15')
+        def day3 = dateFromDashString('2010-07-16')
+
+        def day1Portfolio = new Portfolio(toMoney('$200'), toMoney('$5'))
+        def day2Portfolio = new Portfolio(toMoney('$200'), toMoney('$5'), [new Position(msft, 2)] as Set)
+        def day3Portfolio = new Portfolio(toMoney('$180'), toMoney('$5'), [new Position(msft, 3)] as Set)
+
+        MarketReplay scenario = new MarketReplay(algorithm: new TestMsftAlgorithm(),
+              startDate: day1,
+              endDate: day3,
+              portfolioByDate: [
+                    (day1): day1Portfolio,
+                    (day2): day2Portfolio,
+                    (day3): day3Portfolio
+              ]
+        )
+
+        when: 'the portfolio checkpoints are calculated'
+        def portfolioValueCheckpoints = service.portfolioValueCheckpoints(scenario)
+
+        then: 'the returned portfolio values are correct'
+        portfolioValueCheckpoints == [
+              new PortfolioValue(day1Portfolio, day1, [] as Set),
+              new PortfolioValue(day2Portfolio, day2, [new PositionValue(new Position(msft, 2), day2, toMoney('$25.51'))] as Set),
+              new PortfolioValue(day3Portfolio, day3, [new PositionValue(new Position(msft, 3), day3, toMoney('$24.89'))] as Set)
+        ]
+
+        and: 'the values are correct'
+        portfolioValueCheckpoints[0].marketValue() == toMoney('$200')
+        portfolioValueCheckpoints[1].marketValue() == toMoney('$251.02')
+        portfolioValueCheckpoints[2].marketValue() == toMoney('$254.67')
+    }
 }

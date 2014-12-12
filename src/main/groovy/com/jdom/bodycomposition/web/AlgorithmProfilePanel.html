@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wicket:panel>
-    <form wicket:id="form" id="form">
-        <div>
-            <label for="startDate">Start Date:</label>
-            <input wicket:id="startDate" name="startDate" type="text">
-        </div>
-        <div>
-            <label for="endDate">End Date:</label>
-            <input wicket:id="endDate" name="endDate" type="text">
-        </div>
-        <div>
-            <label for="cash">Cash:</label>
-            <input wicket:id="initialPortfolio.cash" name="cash" type="text">
-        </div>
-        <div>
-            <label for="commissionCost">Commission:</label>
-            <input wicket:id="initialPortfolio.commissionCost" name="commissionCost" type="text">
-        </div>
-        <input type="button" wicket:id="profile" value="Profile Algorithm"/>
-    </form>
-
-    <br/>
+    <div id="formEntry">
+        <form wicket:id="form" id="form">
+            <div>
+                <label for="startDate">Start Date:</label>
+                <input wicket:id="startDate" name="startDate" type="text">
+            </div>
+            <div>
+                <label for="endDate">End Date:</label>
+                <input wicket:id="endDate" name="endDate" type="text">
+            </div>
+            <div>
+                <label for="cash">Cash:</label>
+                <input wicket:id="initialPortfolio.cash" name="cash" type="text">
+            </div>
+            <div>
+                <label for="commissionCost">Commission:</label>
+                <input wicket:id="initialPortfolio.commissionCost" name="commissionCost" type="text">
+            </div>
+            <input type="button" wicket:id="profile" value="Profile Algorithm"/>
+        </form>
+    </div>
 
     <div wicket:id="resultPortfolio" id="resultPortfolio">
         <div>
@@ -28,6 +28,7 @@
             <label wicket:id="duration" name="duration"/>
         </div>
         <br/>
+
         <div wicket:id="transactions" id="transactions"></div>
 
         <br/>
@@ -50,5 +51,11 @@
                 <td wicket:id="marketValue">$4173.00</td>
             </tr>
         </table>
+
+        <br/>
+        <br/>
+
+        <!--<strong>Portfolio Checkpoints</strong>-->
+        <!--<div wicket:id="portfolioCheckpoints" id="portfolioCheckpoints"></div>-->
     </div>
 </wicket:panel>

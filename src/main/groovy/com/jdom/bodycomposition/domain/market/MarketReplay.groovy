@@ -26,6 +26,8 @@ class MarketReplay implements Serializable {
 
     List<PortfolioTransaction> transactions = []
 
+    Map<Date, Portfolio> portfolioByDate = [:]
+
     PortfolioValue resultPortfolio
 
     long valueChangePercent

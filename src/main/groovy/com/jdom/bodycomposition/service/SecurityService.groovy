@@ -24,4 +24,6 @@ interface SecurityService {
     DailySecurityData save(DailySecurityData dailySecurityData)
 
     DailySecurityMetrics findDailySecurityMetricsBySecurityAndDate(BaseSecurity security, Date date)
+
+    List<PortfolioValue> portfolioValueCheckpoints(MarketReplay marketReplay)
 }

@@ -1,12 +1,12 @@
-#previousEntriesDiv, #newEntryDiv {
+#formEntry {
     float:left;
-    width:50%;
+    width:25%;
     overflow:hidden;
     padding-bottom: 20px;
 }
-#similarDays, #metricsDiv {
+#resultPortfolio {
     float:right;
-    width:50%;
+    width:75%;
     overflow:hidden;
     padding-bottom: 20px;
 }
