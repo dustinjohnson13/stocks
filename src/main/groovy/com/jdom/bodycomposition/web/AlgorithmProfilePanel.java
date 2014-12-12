@@ -5,6 +5,7 @@ import com.jdom.bodycomposition.domain.algorithm.Portfolio;
 import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction;
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue;
 import com.jdom.bodycomposition.domain.algorithm.PositionValue;
+import com.jdom.bodycomposition.service.MarketReplayService;
 import com.jdom.bodycomposition.service.SecurityService;
 import com.jdom.util.MathUtil;
 import org.apache.wicket.Component;
@@ -33,6 +34,9 @@ public class AlgorithmProfilePanel extends Panel {
    @SpringBean
    private SecurityService securityService;
 
+   @SpringBean
+   private MarketReplayService marketReplayService;
+
    public AlgorithmProfilePanel(final String id, final IModel<MarketReplay> algorithmScenarioModel) {
       super(id, algorithmScenarioModel);
       setOutputMarkupId(true);
@@ -43,7 +47,7 @@ public class AlgorithmProfilePanel extends Panel {
       DateTextField startDate = new DateTextField("startDate");
       DateTextField endDate = new DateTextField("endDate");
       Component cash = new CurrencyTextField("initialPortfolio.cash");
-      Component commission = new CurrencyTextField("initialPortfolio.commissionCost");
+      Component commission = new CurrencyTextField("commissionCost");
 
       form.add(startDate);
       form.add(endDate);
@@ -56,7 +60,7 @@ public class AlgorithmProfilePanel extends Panel {
 
             MarketReplay scenario = algorithmScenarioModel.getObject();
             scenario.getTransactions().clear();
-            MarketReplay result = securityService.profileAlgorithm(scenario);
+            MarketReplay result = marketReplayService.profileAlgorithm(scenario);
 
             target.add(AlgorithmProfilePanel.this);
          }

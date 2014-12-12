@@ -1,16 +1,8 @@
 package com.jdom.bodycomposition.service
-
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.DailySecurityMetrics
-import com.jdom.bodycomposition.domain.Stock
-import com.jdom.bodycomposition.domain.algorithm.BuyTransaction
-import com.jdom.bodycomposition.domain.algorithm.PositionValue
-import com.jdom.bodycomposition.domain.market.MarketReplay
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
-import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.algorithm.Position
-import com.jdom.bodycomposition.domain.algorithm.SellTransaction
-import com.jdom.bodycomposition.domain.algorithm.impl.TestMsftAlgorithm
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
@@ -22,9 +14,7 @@ import spock.lang.Unroll
 import javax.transaction.Transactional
 
 import static com.jdom.util.MathUtil.toMoney
-import static com.jdom.util.MathUtil.toPercentage
 import static com.jdom.util.TimeUtil.dateFromDashString
-
 /**
  * Created by djohnson on 11/15/14.
  */
@@ -48,55 +38,6 @@ class SimpleSecurityServiceSpec extends Specification {
         actualSize == 6
     }
 
-    def 'should be able to profile algorithms'() {
-
-        def MSFT = new Stock(symbol: 'MSFT')
-
-        def expectedTransactions = [
-              new BuyTransaction(MSFT, dateFromDashString('2003-11-28'), 2, toMoney('$25.50'), toMoney('$4.95')),
-              new SellTransaction(MSFT, dateFromDashString('2004-03-18'), 2, toMoney('$24.89'), toMoney('$4.95')),
-              new BuyTransaction(MSFT, dateFromDashString('2005-05-18'), 2, toMoney('$25.50'), toMoney('$4.95')),
-              new BuyTransaction(MSFT, dateFromDashString('2010-07-14'), 2, toMoney('$25.50'), toMoney('$4.95')),
-              new BuyTransaction(MSFT, dateFromDashString('2010-07-15'), 2, toMoney('$25.50'), toMoney('$4.95')),
-              new SellTransaction(MSFT, dateFromDashString('2010-07-16'), 2, toMoney('$24.89'), toMoney('$4.95'))
-        ]
-
-        given: 'a portfolio of $200 and a commission of $4.95'
-        Portfolio initialPortfolio = new Portfolio(toMoney('$200'), toMoney('$4.95'))
-
-        and: 'purchasing/selling MSFT stock between 11/27/2003 and 07/16/2010'
-        MarketReplay scenario = new MarketReplay(initialPortfolio: initialPortfolio,
-              algorithm: new TestMsftAlgorithm(),
-              startDate: dateFromDashString('2003-11-26'),
-              endDate: dateFromDashString('2010-07-16'))
-
-        when: 'the algorithm is profiled'
-        MarketReplay result = service.profileAlgorithm(scenario)
-        PortfolioValue resultPortfolio = result.resultPortfolio
-
-        then: 'the result contains the correct amount of cash'
-        resultPortfolio.cash == toMoney('$65.86')
-
-        def positions = resultPortfolio.positions
-        and: 'the result contains the correct number of positions'
-        positions.size() == 1
-
-        def position = positions.iterator().next()
-        and: 'the position has the correct attributes'
-        position.security == MSFT
-        position.shares == 2
-
-        def transactions = result.transactions
-        and: 'the correct number of transactions exist'
-        transactions.size() == 6
-
-        and: 'the transactions have the correct attributes'
-        transactions == expectedTransactions
-
-        and: 'the portfolio value change is correct'
-        result.valueChangePercent == toPercentage('-42.18%')
-    }
-
     @Unroll
     def 'should be able to get the value of a portfolio for a specific day'() {
 
@@ -110,7 +51,7 @@ class SimpleSecurityServiceSpec extends Specification {
 
         and: 'an amount of cash'
         def cash = toMoney('$457.33')
-        Portfolio portfolio = new Portfolio(cash, toMoney('$4.98'), positions)
+        Portfolio portfolio = new Portfolio(cash, positions)
 
         when: 'the service is queried for portfolio value on a specific day'
         long portfolioValue = service.portfolioValue(portfolio, date)?.marketValue()
@@ -158,42 +99,5 @@ class SimpleSecurityServiceSpec extends Specification {
         '$48.97' | '$34.62' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.62' // Today 52 week low
         '$50.05' | '$48.38' | '2014-12-08'         | '$50.05'              | '2014-01-14'        | '$34.63' // Today matches 52 week high
         '$48.97' | '$34.63' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.63' // Today matches 52 week low
-    }
-
-    def 'should return portfolio value checkpoints'() {
-        def msft = service.findSecurityBySymbol('MSFT')
-
-        def day1 = dateFromDashString('2010-07-14')
-        def day2 = dateFromDashString('2010-07-15')
-        def day3 = dateFromDashString('2010-07-16')
-
-        def day1Portfolio = new Portfolio(toMoney('$200'), toMoney('$5'))
-        def day2Portfolio = new Portfolio(toMoney('$200'), toMoney('$5'), [new Position(msft, 2)] as Set)
-        def day3Portfolio = new Portfolio(toMoney('$180'), toMoney('$5'), [new Position(msft, 3)] as Set)
-
-        MarketReplay scenario = new MarketReplay(algorithm: new TestMsftAlgorithm(),
-              startDate: day1,
-              endDate: day3,
-              portfolioByDate: [
-                    (day1): day1Portfolio,
-                    (day2): day2Portfolio,
-                    (day3): day3Portfolio
-              ]
-        )
-
-        when: 'the portfolio checkpoints are calculated'
-        def portfolioValueCheckpoints = service.portfolioValueCheckpoints(scenario)
-
-        then: 'the returned portfolio values are correct'
-        portfolioValueCheckpoints == [
-              new PortfolioValue(day1Portfolio, day1, [] as Set),
-              new PortfolioValue(day2Portfolio, day2, [new PositionValue(new Position(msft, 2), day2, toMoney('$25.51'))] as Set),
-              new PortfolioValue(day3Portfolio, day3, [new PositionValue(new Position(msft, 3), day3, toMoney('$24.89'))] as Set)
-        ]
-
-        and: 'the values are correct'
-        portfolioValueCheckpoints[0].marketValue() == toMoney('$200')
-        portfolioValueCheckpoints[1].marketValue() == toMoney('$251.02')
-        portfolioValueCheckpoints[2].marketValue() == toMoney('$254.67')
     }
 }

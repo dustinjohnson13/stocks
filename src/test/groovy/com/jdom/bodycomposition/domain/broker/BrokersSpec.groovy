@@ -17,7 +17,7 @@ class BrokersSpec extends Specification {
 
     BaseSecurity security = Mock()
 
-    Portfolio portfolio = new Portfolio(toMoney('$200'), toMoney('$5'))
+    Portfolio portfolio = new Portfolio(toMoney('$200'))
 
     Broker broker = Brokers.create(market, portfolio, toMoney('$5'))
 
@@ -28,7 +28,7 @@ class BrokersSpec extends Specification {
 
         given: 'a portfolio with $200 and a commission of $5'
         assert portfolio.cash == 20000L
-        assert portfolio.commissionCost == 500L
+        assert broker.commissionCost == 500L
 
         and: 'an order with a cost of $190 not including commission'
         def order = Orders.newBuyLimitOrder(10, security, 19, Duration.DAY_ORDER)
@@ -42,7 +42,7 @@ class BrokersSpec extends Specification {
 
     def 'should pass request for order status through to market'() {
 
-        Portfolio portfolio = new Portfolio(toMoney('$200'), toMoney('$5'))
+        Portfolio portfolio = new Portfolio(toMoney('$200'))
         Broker broker = Brokers.create(market, portfolio, toMoney('$5'))
         OrderRequest order = Mock()
 

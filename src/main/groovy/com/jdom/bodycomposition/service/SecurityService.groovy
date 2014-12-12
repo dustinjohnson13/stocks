@@ -3,10 +3,8 @@ import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.DailySecurityMetrics
 import com.jdom.bodycomposition.domain.Stock
-import com.jdom.bodycomposition.domain.market.MarketReplay
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
-
 /**
  * Created by djohnson on 11/14/14.
  */
@@ -15,8 +13,6 @@ interface SecurityService {
 
     void updateHistoryData(BaseSecurity security) throws FileNotFoundException
 
-    MarketReplay profileAlgorithm(MarketReplay scenario)
-
     PortfolioValue portfolioValue(Portfolio portfolio, Date date)
 
     BaseSecurity findSecurityBySymbol(String symbol)
@@ -24,6 +20,4 @@ interface SecurityService {
     DailySecurityData save(DailySecurityData dailySecurityData)
 
     DailySecurityMetrics findDailySecurityMetricsBySecurityAndDate(BaseSecurity security, Date date)
-
-    List<PortfolioValue> portfolioValueCheckpoints(MarketReplay marketReplay)
 }

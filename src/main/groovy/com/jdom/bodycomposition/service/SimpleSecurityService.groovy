@@ -3,7 +3,6 @@ import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.DailySecurityMetrics
 import com.jdom.bodycomposition.domain.Stock
-import com.jdom.bodycomposition.domain.market.MarketReplay
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.algorithm.Position
@@ -102,17 +101,6 @@ class SimpleSecurityService implements SecurityService {
     }
 
     @Override
-    List<PortfolioValue> portfolioValueCheckpoints(final MarketReplay marketReplay) {
-        List<PortfolioValue> checkpoints = []
-
-        marketReplay.portfolioByDate.each { date, portfolio ->
-            checkpoints.add(portfolioValue(portfolio, date))
-        }
-
-        return checkpoints
-    }
-
-    @Override
     void updateHistoryData(BaseSecurity security) throws FileNotFoundException {
         log.info("Updating history data for security ${security.symbol}")
 
@@ -143,14 +131,6 @@ class SimpleSecurityService implements SecurityService {
             save(data)
         }
         log.info("Inserted ${parsedData.size()} entities for security ${security.symbol}")
-    }
-
-    @Override
-    MarketReplay profileAlgorithm(final MarketReplay scenario) {
-
-        scenario.replay(dailySecurityDataDao, this)
-
-        return scenario
     }
 
     @Override

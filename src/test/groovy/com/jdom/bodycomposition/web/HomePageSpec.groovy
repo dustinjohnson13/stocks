@@ -86,7 +86,7 @@ class HomePageSpec extends Specification {
         formTester.setValue('startDate', '11/26/2003')
         formTester.setValue('endDate', '07/16/2010')
         formTester.setMoney('initialPortfolio.cash', '$200')
-        formTester.setMoney('initialPortfolio.commissionCost', '$4.95')
+        formTester.setMoney('commissionCost', '$4.95')
 
         when: 'the profile algorithm button is clicked'
         formTester.submit('profile')
@@ -95,6 +95,6 @@ class HomePageSpec extends Specification {
         tester.assertLabel('algorithmProfilePanel:resultPortfolio:resultCash', '$65.86')
 
         and: 'the market value is displayed'
-        tester.assertLabel('algorithmProfilePanel:resultPortfolio:marketValue', '$115.64 (-42.18%)')
+        tester.assertLabel('algorithmProfilePanel:resultPortfolio:marketValue', '$165.42 (-17.29%)')
     }
 }

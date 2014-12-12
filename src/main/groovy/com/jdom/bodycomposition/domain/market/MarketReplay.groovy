@@ -22,13 +22,13 @@ class MarketReplay implements Serializable {
 
     Date endDate
 
+    long commissionCost
+
     Algorithm algorithm
 
     List<PortfolioTransaction> transactions = []
 
-    Map<Date, Portfolio> portfolioByDate = [:]
-
-    PortfolioValue resultPortfolio
+    List<PortfolioValue> dailyPortfolios = []
 
     long valueChangePercent
 
@@ -46,12 +46,15 @@ class MarketReplay implements Serializable {
         }
 
         MarketEngine marketEngine = createMarketEngine(dailySecurityDataDao)
-        Broker broker = Brokers.create(marketEngine, initialPortfolio, initialPortfolio.commissionCost)
+        Broker broker = Brokers.create(marketEngine, initialPortfolio, commissionCost)
 
         Date currentDate = startDate
 
         while (!endDate.before(currentDate)) {
+
             marketEngine.processDay(currentDate)
+
+            dailyPortfolios.add(securityService.portfolioValue(broker.portfolio, currentDate))
 
             def dailySecurityDatas = dailySecurityDataDao.findBySecurityInAndDate(securities, currentDate)
 
@@ -62,11 +65,14 @@ class MarketReplay implements Serializable {
 
         duration = System.currentTimeMillis() - start
         transactions = broker.transactions
-        resultPortfolio = securityService.portfolioValue(broker.portfolio, endDate)
         valueChangePercent = resultPortfolio.percentChangeFrom(securityService.portfolioValue(initialPortfolio, startDate))
     }
 
     protected MarketEngine createMarketEngine(final DailySecurityDataDao dailySecurityDataDao) {
         return MarketEngines.create(dailySecurityDataDao)
+    }
+
+    public PortfolioValue getResultPortfolio() {
+        return dailyPortfolios.isEmpty() ? null : dailyPortfolios.get(dailyPortfolios.size() - 1)
     }
 }

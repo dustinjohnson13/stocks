@@ -1,10 +1,13 @@
 package com.jdom.bodycomposition.domain.algorithm
 import com.jdom.bodycomposition.domain.BaseSecurity
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.ToString
+
 /**
  * Created by djohnson on 12/7/14.
  */
-@EqualsAndHashCode(includes = 'position')
+@EqualsAndHashCode
+@ToString
 class PositionValue implements Serializable {
     final Position position
     final Date date

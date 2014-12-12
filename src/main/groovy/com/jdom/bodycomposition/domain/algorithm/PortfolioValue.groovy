@@ -2,11 +2,13 @@ package com.jdom.bodycomposition.domain.algorithm
 
 import com.jdom.util.MathUtil
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.ToString
 
 /**
  * Created by djohnson on 12/7/14.
  */
 @EqualsAndHashCode
+@ToString
 class PortfolioValue implements Serializable {
     final Portfolio portfolio
     final Date date

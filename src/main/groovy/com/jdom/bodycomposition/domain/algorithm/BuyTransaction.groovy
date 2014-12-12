@@ -18,17 +18,19 @@ class BuyTransaction extends TransferTransaction {
         long newCash = existing.cash + cashValue - commission
 
         def positions = new HashSet<Position>()
-        positions.addAll(existing.positions)
+        positions.addAll(existing.positions.findAll{ it.security != security})
 
-        def position = positions.find{ it.security == security }
+        def position = existing.positions.find{ it.security == security }
         if (position == null) {
             position = new Position(security, numberOfShares)
         } else {
             position = new Position(security, position.shares + numberOfShares)
         }
-        positions.add(position)
+        if (position.shares > 0) {
+            positions.add(position)
+        }
 
-        return new Portfolio(newCash, existing.commissionCost, positions)
+        return new Portfolio(newCash, positions)
     }
 
     @Override
