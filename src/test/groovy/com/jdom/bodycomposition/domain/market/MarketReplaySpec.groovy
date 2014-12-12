@@ -5,6 +5,7 @@ import com.jdom.bodycomposition.domain.Stock
 import com.jdom.bodycomposition.domain.algorithm.Algorithm
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
+import com.jdom.bodycomposition.domain.broker.Broker
 import com.jdom.bodycomposition.service.DailySecurityDataDao
 import com.jdom.bodycomposition.service.SecurityService
 import spock.lang.Shared
@@ -56,7 +57,7 @@ class MarketReplaySpec extends Specification {
         "a market replay configuration from ${startDateString} to ${endDateString}"
         MarketReplay replay = new MarketReplay() {
             @Override
-            protected MarketEngine createMarketEngine(final DailySecurityDataDao dao, final Portfolio portfolio) {
+            protected MarketEngine createMarketEngine(final DailySecurityDataDao dao) {
                 return marketEngine
             }
         }
@@ -72,7 +73,7 @@ class MarketReplaySpec extends Specification {
         1 * marketEngine.processDay(expectedReplayDate)
 
         then: 'the day is replayed against the algorithm second with the daily security data entries for that date'
-        1 * algorithm.actionsForDay(marketEngine, expectedDailySecurityData, expectedReplayDate)
+        1 * algorithm.actionsForDay(_ as Broker, expectedDailySecurityData, expectedReplayDate)
 
         where:
         expectedReplayDateString | expectedDailySecurityData

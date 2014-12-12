@@ -1,7 +1,5 @@
 package com.jdom.bodycomposition.domain.market
-
 import com.jdom.bodycomposition.domain.BaseSecurity
-import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.market.orders.Duration
 import com.jdom.bodycomposition.domain.market.orders.Orders
 import com.jdom.bodycomposition.service.DailySecurityDataDao
@@ -20,7 +18,6 @@ import spock.lang.Unroll
 import javax.transaction.Transactional
 
 import static com.jdom.util.TimeUtil.dateFromDashString
-
 /**
  * Created by djohnson on 12/10/14.
  */
@@ -40,12 +37,15 @@ class MarketEnginesSpec extends Specification {
 
     MarketEngine market
 
+    OrderProcessedListener listener = Mock()
+
     def currentDay = dateFromDashString('2013-12-01')
     def nextDay = dateFromDashString('2013-12-02')
 
     def setup() {
         msft = securityDao.findBySymbol('MSFT')
-        market = MarketEngines.create(dailySecurityDataDao, new Portfolio(200000l, 495l))
+        market = MarketEngines.create(dailySecurityDataDao)
+        market.registerOrderFilledListener(listener)
         market.processDay(currentDay)
     }
 
@@ -71,6 +71,9 @@ class MarketEnginesSpec extends Specification {
 
         and: 'the order was executed at open price'
         processedOrder.executionPrice == 3809
+
+        and: 'the listener was notified'
+        listener.orderFilled(processedOrder)
 
         where:
         type << ['buy', 'sell']
@@ -99,6 +102,9 @@ class MarketEnginesSpec extends Specification {
 
         and: 'the order was executed at the limit price'
         processedOrder.executionPrice == order.price
+
+        and: 'the listener was notified'
+        listener.orderFilled(processedOrder)
 
         where:
         type   | limitPrice | duration
@@ -137,6 +143,11 @@ class MarketEnginesSpec extends Specification {
         processedOrder
         processedOrder.status == expectedStatus
 
+        and: 'the listener was notified if the order was cancelled'
+        if (expectedStatus == OrderStatus.CANCELLED) {
+            1 * listener.orderCancelled(_ as OrderRequest)
+        }
+
         where:
         type   | limitPrice | duration           | expectedStatus
         'buy'  | 3805       | Duration.GTC       | OrderStatus.OPEN // 1 cent below low price
@@ -171,15 +182,62 @@ class MarketEnginesSpec extends Specification {
             assert processedOrder.status == OrderStatus.OPEN
         }
 
-        and: 'the next day the order is cancelled'
+        then: 'the next day the order is cancelled'
         market.processDay(TimeUtil.oneDayLater(currentDay))
         def processedOrder = market.getOrder(submittedOrder)
         processedOrder.status == OrderStatus.CANCELLED
+
+        then: 'the listener is notified'
+        1 * listener.orderCancelled(_ as OrderRequest)
 
         where:
         type   | limitPrice
         'buy'  | 2
         'sell' | 10000
+    }
+
+    def 'should consider order status listener registration idempotent, order cancelling'() {
+
+        def order = Orders.newBuyLimitOrder(10, msft, 1L, Duration.DAY_ORDER)
+
+        given: 'the same listener is registered more than once'
+        market.registerOrderFilledListener(listener)
+        market.registerOrderFilledListener(listener)
+
+        and: 'a limit order that will not be executed is submitted'
+        market.submit(order)
+
+        when: 'an order is cancelled'
+        market.processDay(TimeUtil.oneDayLater(currentDay))
+
+        then: 'the listener will only be notified once'
+        1 * listener.orderCancelled(_ as OrderRequest)
+    }
+
+    def 'should consider order status listener registration idempotent, order filling'() {
+
+        def order = Orders.newBuyLimitOrder(10, msft, 1000000L, Duration.DAY_ORDER)
+
+        given: 'the same listener is registered more than once'
+        market.registerOrderFilledListener(listener)
+        market.registerOrderFilledListener(listener)
+
+        and: 'a limit order that will be executed is submitted'
+        market.submit(order)
+
+        when: 'an order is filled'
+        market.processDay(TimeUtil.oneDayLater(currentDay))
+
+        then: 'the listener will only be notified once'
+        1 * listener.orderFilled(_ as OrderRequest)
+    }
+
+    def 'should throw exception when trying to register a null listener'() {
+        when: 'a null listener is registered'
+        market.registerOrderFilledListener(null)
+
+        then: 'an exception is thrown'
+        thrown IllegalArgumentException
     }
 
 //    TODO: Test for rejecting selling shares that aren't owned

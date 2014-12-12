@@ -4,6 +4,8 @@ import com.jdom.bodycomposition.domain.algorithm.Algorithm
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
+import com.jdom.bodycomposition.domain.broker.Broker
+import com.jdom.bodycomposition.domain.broker.Brokers
 import com.jdom.bodycomposition.service.DailySecurityDataDao
 import com.jdom.bodycomposition.service.SecurityService
 import com.jdom.util.TimeUtil
@@ -41,7 +43,8 @@ class MarketReplay implements Serializable {
             }
         }
 
-        MarketEngine marketEngine = createMarketEngine(dailySecurityDataDao, initialPortfolio)
+        MarketEngine marketEngine = createMarketEngine(dailySecurityDataDao)
+        Broker broker = Brokers.create(marketEngine, initialPortfolio, initialPortfolio.commissionCost)
 
         Date currentDate = startDate
 
@@ -50,18 +53,18 @@ class MarketReplay implements Serializable {
 
             def dailySecurityDatas = dailySecurityDataDao.findBySecurityInAndDate(securities, currentDate)
 
-            algorithm.actionsForDay(marketEngine, dailySecurityDatas, currentDate)
+            algorithm.actionsForDay(broker, dailySecurityDatas, currentDate)
 
             currentDate = TimeUtil.oneDayLater(currentDate)
         }
 
         duration = System.currentTimeMillis() - start
-        transactions = marketEngine.transactions
-        resultPortfolio = securityService.portfolioValue(marketEngine.portfolio, endDate)
+        transactions = broker.transactions
+        resultPortfolio = securityService.portfolioValue(broker.portfolio, endDate)
         valueChangePercent = resultPortfolio.percentChangeFrom(securityService.portfolioValue(initialPortfolio, startDate))
     }
 
-    protected MarketEngine createMarketEngine(final DailySecurityDataDao dailySecurityDataDao, final Portfolio portfolio) {
-        return MarketEngines.create(dailySecurityDataDao, initialPortfolio)
+    protected MarketEngine createMarketEngine(final DailySecurityDataDao dailySecurityDataDao) {
+        return MarketEngines.create(dailySecurityDataDao)
     }
 }

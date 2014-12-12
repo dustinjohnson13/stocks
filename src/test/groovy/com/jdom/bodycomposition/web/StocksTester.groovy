@@ -6,6 +6,9 @@ import org.apache.wicket.protocol.http.WebApplication
 import org.apache.wicket.util.tester.BaseWicketTester
 import org.apache.wicket.util.tester.FormTester
 import org.apache.wicket.util.tester.WicketTester
+
+import java.math.RoundingMode
+
 /**
  * Created by djohnson on 12/7/14.
  */
@@ -41,8 +44,11 @@ class StocksTester extends WicketTester {
         }
 
         FormTester setMoney(Component formComponent, String money) {
-            long asLong = (long) (MathUtil.toMoney(money) / 100L)
-            return setValue(formComponent, Long.toString(asLong))
+            BigDecimal pennies = new BigDecimal(MathUtil.toMoney(money))
+            BigDecimal penniesPerDollar = new BigDecimal(100)
+
+            String dollarsAndCents = pennies.divide(penniesPerDollar).setScale(2, RoundingMode.CEILING).toString()
+            return setValue(formComponent, dollarsAndCents);
         }
     }
 }

@@ -10,4 +10,5 @@ interface OrderRequest extends Order {
     Date getSubmissionDate()
     OrderStatus getStatus()
     long getExecutionPrice()
+    Date getProcessedDate()
 }

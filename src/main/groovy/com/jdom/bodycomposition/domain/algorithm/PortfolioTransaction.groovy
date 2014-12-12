@@ -18,4 +18,6 @@ interface PortfolioTransaction extends Serializable {
     long getCommission()
 
     long getCashValue()
+
+    PortfolioTransaction forDate(Date date)
 }

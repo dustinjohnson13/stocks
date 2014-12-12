@@ -1,10 +1,7 @@
 package com.jdom.bodycomposition.domain.algorithm
-
 import com.jdom.bodycomposition.domain.BaseSecurity
-import com.jdom.bodycomposition.domain.Stock
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
-
 /**
  * Created by djohnson on 12/7/14.
  */
@@ -16,7 +13,7 @@ class Position implements Serializable {
 
     final int shares
 
-    Position(Stock security, int shares) {
+    Position(BaseSecurity security, int shares) {
         this.security = security
         this.shares = shares
     }

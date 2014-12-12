@@ -40,4 +40,9 @@ class BuyTransaction extends TransferTransaction {
     long getCashValue() {
         return -(price * numberOfShares)
     }
+
+    @Override
+    BuyTransaction forDate(final Date date) {
+        return new BuyTransaction(security, date, numberOfShares, price, commission)
+    }
 }

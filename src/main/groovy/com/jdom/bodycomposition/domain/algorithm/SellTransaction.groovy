@@ -45,4 +45,9 @@ class SellTransaction extends TransferTransaction {
     long getCashValue() {
         return price * numberOfShares
     }
+
+    @Override
+    SellTransaction forDate(final Date date) {
+        return new SellTransaction(security, date, numberOfShares, price, commission)
+    }
 }
