@@ -26,7 +26,7 @@ class BuyTransaction extends TransferTransaction {
         } else {
             position = new Position(security, position.shares + numberOfShares)
         }
-        if (position.shares > 0) {
+        if (position.shares != 0) {
             positions.add(position)
         }
 

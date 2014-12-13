@@ -92,9 +92,9 @@ class HomePageSpec extends Specification {
         formTester.submit('profile')
 
         then: 'the portfolio result was calculated'
-        tester.assertLabel('algorithmProfilePanel:resultPortfolio:resultCash', '$65.86')
+        tester.assertLabel('algorithmProfilePanel:results:resultPortfolio:resultCash', '$65.86')
 
         and: 'the market value is displayed'
-        tester.assertLabel('algorithmProfilePanel:resultPortfolio:marketValue', '$165.42 (-17.29%)')
+        tester.assertLabel('algorithmProfilePanel:results:resultPortfolio:marketValue', '$165.42 (-17.29%)')
     }
 }

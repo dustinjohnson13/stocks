@@ -23,11 +23,11 @@ class SellTransaction extends TransferTransaction {
 
         def position = existing.positions.find { it.security == security }
         if (position == null) {
-            position = new Position(security, numberOfShares)
+            position = new Position(security, -numberOfShares)
         } else {
             position = new Position(security, position.shares - numberOfShares)
         }
-        if (position.shares > 0) {
+        if (position.shares != 0) {
             positions.add(position)
         }
 
