@@ -1,4 +1,6 @@
 package com.jdom.bodycomposition.web
+
+import com.jdom.bodycomposition.domain.algorithm.impl.TestMsftAlgorithm
 import com.jdom.bodycomposition.service.MockDailySecurityDataDownloader
 import com.jdom.bodycomposition.service.SpringProfiles
 import com.jdom.util.TimeUtil
@@ -35,6 +37,7 @@ class HomePageSpec extends Specification {
         tester = new StocksTester(application)
         page = tester.startPage(HomePage.class)
         tester.assertRenderedPage(HomePage.class)
+        page.scenarioModel.getObject().algorithm = new TestMsftAlgorithm()
     }
 
     def cleanup() {

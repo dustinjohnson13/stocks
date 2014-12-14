@@ -2,6 +2,7 @@ package com.jdom.bodycomposition.domain.broker
 
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
+import com.jdom.bodycomposition.domain.algorithm.Position
 import com.jdom.bodycomposition.domain.market.Market
 import com.jdom.bodycomposition.domain.market.OrderRequest
 import com.jdom.bodycomposition.domain.market.orders.Duration
@@ -102,5 +103,25 @@ class BrokersSpec extends Specification {
         reason             | order
         'shares not owned' | Orders.newSellLimitOrder(10, security, toMoney('$19'), Duration.DAY_ORDER)
         'not enough money' | Orders.newBuyLimitOrder(10, security, toMoney('$20'), Duration.DAY_ORDER)
+    }
+
+    @Unroll
+    def 'should not be able to submit multiple pending orders that would result in #reason'() {
+        Portfolio portfolio = new Portfolio(toMoney('$200'), [new Position(security, 10)] as Set)
+        Broker broker = Brokers.create(market, portfolio, toMoney('$5'))
+
+        given: 'there is a pending order'
+        broker.submit(firstOrder)
+
+        when: 'another order is submitted which would result in an invalid state if the first order is filled'
+        broker.submit(secondOrder)
+
+        then: 'the order is rejected'
+        thrown OrderRejectedException
+
+        where:
+        reason                               | firstOrder                                                                 | secondOrder
+        'selling shares that will not exist' | Orders.newSellLimitOrder(10, security, toMoney('$19'), Duration.DAY_ORDER) | Orders.newSellLimitOrder(1, security, toMoney('$19'), Duration.DAY_ORDER)
+        'spending money that will not exist' | Orders.newBuyLimitOrder(10, security, toMoney('$19'), Duration.DAY_ORDER)  | Orders.newBuyLimitOrder(1, security, toMoney('$19'), Duration.DAY_ORDER)
     }
 }

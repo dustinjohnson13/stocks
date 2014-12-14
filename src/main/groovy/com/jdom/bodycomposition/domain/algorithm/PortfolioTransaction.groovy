@@ -5,6 +5,8 @@ package com.jdom.bodycomposition.domain.algorithm
 interface PortfolioTransaction extends Serializable {
     Portfolio apply(Portfolio portfolio)
 
+    Portfolio apply(Portfolio portfolio, boolean logTransaction)
+
     String getAction()
 
     String getSymbol()

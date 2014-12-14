@@ -33,20 +33,23 @@ class MarketEnginesSpec extends Specification {
     @Autowired
     DailySecurityDataDao dailySecurityDataDao
 
+    BaseSecurity fb
+
     BaseSecurity msft
 
     MarketEngine market
 
     OrderProcessedListener listener = Mock()
 
-    def currentDay = dateFromDashString('2013-12-01')
-    def nextDay = dateFromDashString('2013-12-02')
+    def sundayNonMarketDay = dateFromDashString('2013-12-01')
+    def mondayMarketDay = dateFromDashString('2013-12-02')
 
     def setup() {
+        fb = securityDao.findBySymbol('FB')
         msft = securityDao.findBySymbol('MSFT')
         market = MarketEngines.create(dailySecurityDataDao)
         market.registerOrderFilledListener(listener)
-        market.processDay(currentDay)
+        market.processDay(sundayNonMarketDay)
     }
 
     @Unroll
@@ -62,7 +65,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         when: 'the market processes the next day'
-        market.processDay(nextDay)
+        market.processDay(mondayMarketDay)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is processed'
@@ -93,7 +96,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         when: 'the market processes the next day'
-        market.processDay(nextDay)
+        market.processDay(mondayMarketDay)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is processed'
@@ -136,7 +139,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         when: 'the market processes the next day'
-        market.processDay(nextDay)
+        market.processDay(mondayMarketDay)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is not processed'
@@ -175,15 +178,15 @@ class MarketEnginesSpec extends Specification {
 
         then: 'the order is left open for one year'
         364.times {
-            currentDay = TimeUtil.oneDayLater(currentDay)
-            market.processDay(currentDay)
+            sundayNonMarketDay = TimeUtil.oneDayLater(sundayNonMarketDay)
+            market.processDay(sundayNonMarketDay)
 
             def processedOrder = market.getOrder(submittedOrder)
             assert processedOrder.status == OrderStatus.OPEN
         }
 
         then: 'the next day the order is cancelled'
-        market.processDay(TimeUtil.oneDayLater(currentDay))
+        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
         def processedOrder = market.getOrder(submittedOrder)
         processedOrder.status == OrderStatus.CANCELLED
 
@@ -208,7 +211,7 @@ class MarketEnginesSpec extends Specification {
         market.submit(order)
 
         when: 'an order is cancelled'
-        market.processDay(TimeUtil.oneDayLater(currentDay))
+        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
 
         then: 'the listener will only be notified once'
         1 * listener.orderCancelled(_ as OrderRequest)
@@ -226,7 +229,7 @@ class MarketEnginesSpec extends Specification {
         market.submit(order)
 
         when: 'an order is filled'
-        market.processDay(TimeUtil.oneDayLater(currentDay))
+        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
 
         then: 'the listener will only be notified once'
         1 * listener.orderFilled(_ as OrderRequest)
@@ -240,6 +243,23 @@ class MarketEnginesSpec extends Specification {
         thrown IllegalArgumentException
     }
 
-//    TODO: Test for rejecting selling shares that aren't owned
+    def 'should be able to submit multiple orders the same date'() {
+
+        def firstOrder = Orders.newBuyLimitOrder(10, msft, 1000000L, Duration.DAY_ORDER)
+        def secondOrder = Orders.newBuyLimitOrder(10, fb, 1000000L, Duration.DAY_ORDER)
+
+        given: 'one order is submitted'
+        def firstOrderRequest = market.submit(firstOrder)
+
+        and: 'another order is submitted the same day for a different security'
+        def secondOrderRequest = market.submit(secondOrder)
+
+        when: 'the market day is processed'
+        market.processDay(mondayMarketDay)
+
+        then: 'both orders should have been filled'
+        1 * listener.orderFilled(firstOrderRequest)
+        1 * listener.orderFilled(secondOrderRequest)
+    }
 
 }

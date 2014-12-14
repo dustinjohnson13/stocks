@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 @ToString
 @EqualsAndHashCode
 abstract class TransferTransaction implements PortfolioTransaction {
-    private static Logger log = LoggerFactory.getLogger(SellTransaction)
+    private static Logger log = LoggerFactory.getLogger(TransferTransaction)
 
     final BaseSecurity security
     final Date date
@@ -29,7 +29,7 @@ abstract class TransferTransaction implements PortfolioTransaction {
     }
 
     @Override
-    Portfolio apply(final Portfolio portfolio) {
+    Portfolio apply(final Portfolio portfolio, boolean logTransaction = true) {
 
         def newPortfolio = createNewPortfolio(portfolio)
         if (newPortfolio.cash < 0) {
@@ -42,11 +42,12 @@ abstract class TransferTransaction implements PortfolioTransaction {
             }
         }
 
-        if (log.isInfoEnabled()) {
-            StringBuilder sb = new StringBuilder(TimeUtil.dashString(date)).append(getAction()).append(" ")
-                    .append(security.symbol).append(" ")
-                    .append(numberOfShares).append("@").append(MathUtil.formatMoney(price)).append(":\n")
-            sb.append("   From portfolio: ${portfolio}\n").append("   New portfolio: ${newPortfolio}")
+        if (logTransaction && log.isInfoEnabled()) {
+            StringBuilder sb = new StringBuilder('\n').append(TimeUtil.dashString(date)).append(' ')
+                  .append(getAction()).append(" ").append(security.exchange).append(':')
+                  .append(security.symbol).append(" ").append(numberOfShares).append("@")
+                  .append(MathUtil.formatMoney(price)).append(":\n")
+                  sb.append("   From portfolio: ${portfolio}\n").append("   New portfolio: ${newPortfolio}")
 
             log.info(sb.toString())
         }

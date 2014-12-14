@@ -54,11 +54,12 @@ class MarketReplay implements Serializable {
 
             marketEngine.processDay(currentDate)
 
-            dailyPortfolios.add(securityService.portfolioValue(broker.portfolio, currentDate))
+            def portfolioValue = securityService.portfolioValue(broker.portfolio, currentDate)
+            dailyPortfolios.add(portfolioValue)
 
             def dailySecurityDatas = dailySecurityDataDao.findBySecurityInAndDate(securities, currentDate)
 
-            algorithm.actionsForDay(broker, dailySecurityDatas, currentDate)
+            algorithm.actionsForDay(broker, portfolioValue, dailySecurityDatas, currentDate)
 
             currentDate = TimeUtil.oneDayLater(currentDate)
         }

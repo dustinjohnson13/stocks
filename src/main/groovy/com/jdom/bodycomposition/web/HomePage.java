@@ -1,9 +1,9 @@
 package com.jdom.bodycomposition.web;
 
 import com.jdom.bodycomposition.domain.Stock;
-import com.jdom.bodycomposition.domain.market.MarketReplay;
 import com.jdom.bodycomposition.domain.algorithm.Portfolio;
-import com.jdom.bodycomposition.domain.algorithm.impl.TestMsftAlgorithm;
+import com.jdom.bodycomposition.domain.algorithm.impl.BuyRandomSellHigher;
+import com.jdom.bodycomposition.domain.market.MarketReplay;
 import com.jdom.bodycomposition.service.DailySecurityDataDao;
 import com.jdom.bodycomposition.service.SecurityService;
 import com.jdom.util.TimeUtil;
@@ -45,7 +45,7 @@ public class HomePage extends WebPage {
       marketReplay.setCommissionCost(495L);
       marketReplay.setStartDate(new Date(TimeUtil.currentTimeMillis() - TimeUtil.MILLIS_PER_YEAR));
       marketReplay.setEndDate(TimeUtil.newDate());
-      marketReplay.setAlgorithm(new TestMsftAlgorithm());
+      marketReplay.setAlgorithm(new BuyRandomSellHigher());
       scenarioModel.setObject(marketReplay);
 
       final AjaxLink<Void> updateSecurityDailyData = new AjaxLink<Void>("updateSecurityDailyData") {

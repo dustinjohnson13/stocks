@@ -3,6 +3,7 @@ package com.jdom.bodycomposition.domain.algorithm.impl
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.algorithm.Algorithm
+import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.broker.Broker
 import com.jdom.bodycomposition.domain.market.orders.Duration
 import com.jdom.bodycomposition.domain.market.orders.Orders
@@ -22,13 +23,11 @@ class TestMsftAlgorithm implements Algorithm {
     }
 
     @Override
-    void actionsForDay(Broker broker, final List<DailySecurityData> dayEntries, Date currentDate) {
+    void actionsForDay(final Broker broker, final PortfolioValue portfolioValue, final List<DailySecurityData> dayEntries, Date currentDate) {
         if (purchaseDates.contains(TimeUtil.dashString(currentDate))) {
             broker.submit(Orders.newBuyLimitOrder(2, dayEntries.find{ it.security.symbol == 'MSFT' }.security, 2550, Duration.GTC)) // GTC to work around thanksgiving
-//            return [new BuyTransaction(dayEntry.security, dayEntry.date, 2, 2550, portfolio.commissionCost)]
         } else if (sellDates.contains(TimeUtil.dashString(currentDate))) {
             broker.submit(Orders.newSellLimitOrder(2, dayEntries.find{ it.security.symbol == 'MSFT' }.security, 2489, Duration.DAY_ORDER))
-//            return [new SellTransaction(dayEntry.security, dayEntry.date, 2, 2489, portfolio.commissionCost)]
         }
     }
 }

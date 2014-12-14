@@ -57,9 +57,9 @@ final class Brokers {
                 // Dry run the transactions, including all current pending
                 Portfolio pendingPortfolio = portfolio
                 pendingTransactions.each { id, pendingTransaction ->
-                    pendingPortfolio = pendingTransaction.apply(pendingPortfolio)
+                    pendingPortfolio = pendingTransaction.apply(pendingPortfolio, false)
                 }
-                pendingPortfolio = transaction.apply(portfolio)
+                pendingPortfolio = transaction.apply(pendingPortfolio, false)
 
                 // This would be valid, store the pending transaction
                 def submittedOrder = market.submit(order)
@@ -92,8 +92,10 @@ final class Brokers {
         @Override
         void orderFilled(final OrderRequest order) {
             def transaction = pendingTransactions.remove(order.id)
-            transactions.add(transaction.forDate(order.processedDate))
-            portfolio = transaction.apply(portfolio)
+
+            def transactionForProcessedDate = transaction.forDate(order.processedDate)
+            transactions.add(transactionForProcessedDate)
+            portfolio = transactionForProcessedDate.apply(portfolio)
         }
 
         @Override

@@ -9,5 +9,5 @@ interface Algorithm extends Serializable {
 
     boolean includeSecurity(BaseSecurity ticker)
 
-    void actionsForDay(Broker broker, List<DailySecurityData> dayEntries, Date currentDate)
+    void actionsForDay(Broker broker, PortfolioValue portfolioValue, List<DailySecurityData> dayEntries, Date currentDate)
 }

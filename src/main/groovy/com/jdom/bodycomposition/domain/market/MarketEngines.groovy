@@ -11,13 +11,16 @@ import com.jdom.bodycomposition.domain.market.orders.SellLimitOrder
 import com.jdom.bodycomposition.service.DailySecurityDataDao
 import com.jdom.util.TimeUtil
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.ToString
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Created by djohnson on 12/10/14.
  */
 final class MarketEngines {
 
-    private static final long COMMISSION_PRICE = 495l
+    private static final Logger log = LoggerFactory.getLogger(MarketEngines)
 
     private MarketEngines() {
     }
@@ -39,8 +42,16 @@ final class MarketEngines {
 
         @Override
         OrderRequest submit(final Order marketOrder) {
+            if (log.isDebugEnabled()) {
+                log.debug "Order [$marketOrder] was received."
+            }
+
             def orderRequest = new OrderRequestImpl(marketOrder, currentDate)
             openOrders.add(orderRequest)
+
+            if (log.isDebugEnabled()) {
+                log.debug "Open orders:\n${openOrders}"
+            }
 
             return orderRequest
         }
@@ -49,11 +60,18 @@ final class MarketEngines {
         void processDay(Date date) {
             currentDate = date
 
+            if (log.isInfoEnabled()) {
+                log.info "Market day [${date}] is being processed.  Open orders:\n${openOrders}"
+            }
+
             Set<OrderRequestImpl> origList = new HashSet<>(openOrders)
             openOrders.clear()
 
             boolean anySecuritiesProcessed = false
             for (OrderRequestImpl order : origList) {
+                if (log.isDebugEnabled()) {
+                    log.debug "Order [${order.id}] is being processed."
+                }
                 switch (order.status) {
                     // Skip these orders, they're done types
                     case OrderStatus.EXECUTED:
@@ -66,6 +84,9 @@ final class MarketEngines {
 
                 def securityData = dailySecurityDataDao.findBySecurityAndDate(order.security, date)
                 if (securityData == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug "No security data to process order [${order.id}]."
+                    }
                     continue;
                 } else {
                     anySecuritiesProcessed = true
@@ -74,25 +95,48 @@ final class MarketEngines {
                 def processedOrder = order
                 switch (order.order) {
                     case LimitOrder:
+                        if (log.isDebugEnabled()) {
+                            log.debug "Processing limit order [${order.id}]."
+                        }
                         processedOrder = processLimitOrder(order, order.order, securityData)
                         break;
                     case MarketOrder:
+                        if (log.isDebugEnabled()) {
+                            log.debug "Processing market order [${order.id}]."
+                        }
                         MarketOrder marketOrder = (MarketOrder) order.order
                         processedOrder = new OrderRequestImpl(order, OrderStatus.EXECUTED, currentDate, securityData.open)
                         break;
                 }
 
+                if (log.isDebugEnabled()) {
+                    log.debug "Order [${processedOrder.id}] has status [${processedOrder.status}]."
+                }
+
                 if (processedOrder.status == OrderStatus.EXECUTED || processedOrder.status == OrderStatus.CANCELLED) {
+                    if (log.isDebugEnabled()) {
+                        log.debug "Added [${processedOrder.id}] to processed orders."
+                    }
                     processedOrders.add(processedOrder)
                     notifyListeners(processedOrder)
                 } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug "Added [${processedOrder.id}] back to open orders."
+                    }
                     openOrders.add(processedOrder)
                 }
             }
 
             // Must be non-market day, restore orders list
             if (!anySecuritiesProcessed) {
+                if (log.isDebugEnabled()) {
+                    log.debug "No securities processed, adding all orders to open orders."
+                }
                 openOrders.addAll(origList)
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug "Market day [${date}] is finished.  Open orders:\n${openOrders}"
             }
         }
 
@@ -107,10 +151,19 @@ final class MarketEngines {
         }
 
         void notifyListeners(OrderRequest processedOrder) {
+            if (log.isDebugEnabled()) {
+                log.debug "Notifying ${listeners.size()} listeners of processed order [${processedOrder.id}]."
+            }
             listeners.each {
                 if (processedOrder.status == OrderStatus.EXECUTED) {
+                    if (log.isDebugEnabled()) {
+                        log.debug "Listener notified that order [${processedOrder.id}] was filled."
+                    }
                     it.orderFilled(processedOrder)
                 } else if (processedOrder.status == OrderStatus.CANCELLED) {
+                    if (log.isDebugEnabled()) {
+                        log.debug "Listener notified that order [${processedOrder.id}] was cancelled."
+                    }
                     it.orderCancelled(processedOrder)
                 } else {
                     throw new IllegalArgumentException("Unknown OrderStatus ${processedOrder.status} for notifying listeners!")
@@ -141,33 +194,48 @@ final class MarketEngines {
 
         OrderRequestImpl processLimitOrder(OrderRequestImpl order, LimitOrder limitOrder, Closure<Boolean> unfillable) {
             if (unfillable.call()) {
+                if (log.isDebugEnabled()) {
+                    log.debug "Order [${order.id}] cannot be filled."
+                }
                 if (limitOrder.duration == Duration.DAY_ORDER) {
+                    if (log.isDebugEnabled()) {
+                        log.debug "Order [${order.id}] is a day order, cancelling it."
+                    }
                     return new OrderRequestImpl(order, OrderStatus.CANCELLED, currentDate)
                 } else {
-
                     Date oneYearAfterSubmission = new Date(order.submissionDate.time + TimeUtil.MILLIS_PER_YEAR)
                     if (!oneYearAfterSubmission.after(currentDate)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug "Order [${order.id}] is more than one year old, cancelling it."
+                        }
                         return new OrderRequestImpl(order, OrderStatus.CANCELLED, currentDate)
                     }
+                    if (log.isDebugEnabled()) {
+                        log.debug "Order [${order.id}] is a GTC order, but not more than a year old, returning it to be tried tomorrow."
+                    }
+                    return order
                 }
-                return order
             }
 
+            if (log.isDebugEnabled()) {
+                log.debug "Order [${order.id}] can be filled, executing it."
+            }
             return new OrderRequestImpl(order, OrderStatus.EXECUTED, currentDate, limitOrder.price)
         }
-
     }
 
     @EqualsAndHashCode(includes = ['id'])
+    @ToString
     private static class OrderRequestImpl implements OrderRequest, Comparable<OrderRequest> {
         private final Order order
-        final String id = UUID.randomUUID().toString()
+        final String id
         final Date submissionDate
         final OrderStatus status
         final long executionPrice
         final Date processedDate
 
         private OrderRequestImpl(Order order, Date submissionDate) {
+            this.id = UUID.randomUUID().toString()
             this.order = order
             this.status = OrderStatus.OPEN
             this.submissionDate = submissionDate
@@ -199,7 +267,11 @@ final class MarketEngines {
 
         @Override
         int compareTo(final OrderRequest o) {
-            return getSubmissionDate().compareTo(o.getSubmissionDate())
+            int comparison = submissionDate.compareTo(o.submissionDate)
+            if (comparison == 0) {
+                comparison = id.compareTo(o.id)
+            }
+            return comparison
         }
     }
 }
