@@ -6,6 +6,9 @@ import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+import static MathUtil.formatMoney
+
 /**
  * Created by djohnson on 12/6/14.
  */
@@ -33,7 +36,7 @@ abstract class TransferTransaction implements PortfolioTransaction {
 
         def newPortfolio = createNewPortfolio(portfolio)
         if (newPortfolio.cash < 0) {
-            throw new IllegalArgumentException("Portfolio would have ${newPortfolio.cash}, unable to apply!")
+            throw new IllegalArgumentException("Portfolio would have ${formatMoney(newPortfolio.cash)}, unable to apply!")
         }
         newPortfolio.positions.each { position ->
             if (position.shares < 0) {

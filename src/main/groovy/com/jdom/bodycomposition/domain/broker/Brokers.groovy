@@ -2,6 +2,7 @@ package com.jdom.bodycomposition.domain.broker
 
 import com.jdom.bodycomposition.domain.algorithm.BuyTransaction
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
+import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction
 import com.jdom.bodycomposition.domain.algorithm.SellTransaction
 import com.jdom.bodycomposition.domain.algorithm.TransferTransaction
 import com.jdom.bodycomposition.domain.market.Market
@@ -11,6 +12,8 @@ import com.jdom.bodycomposition.domain.market.orders.BuyLimitOrder
 import com.jdom.bodycomposition.domain.market.orders.Order
 import com.jdom.bodycomposition.domain.market.orders.OrderRejectedException
 import com.jdom.bodycomposition.domain.market.orders.SellLimitOrder
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import javax.transaction.Transaction
 
@@ -28,11 +31,13 @@ final class Brokers {
 
     private static class DefaultBroker implements Broker, OrderProcessedListener {
 
+        private static final Logger log = LoggerFactory.getLogger(DefaultBroker)
+
         private final Market market
         private Portfolio portfolio
         final long commissionCost
         final List<Transaction> transactions = []
-        final Map<String, TransferTransaction> pendingTransactions = [:]
+        final Map<String, PortfolioTransaction> pendingTransactions = [:]
 
 
         DefaultBroker(Market market, Portfolio portfolio, long commissionCost) {
@@ -54,12 +59,19 @@ final class Brokers {
             try {
                 def transaction = createTransaction(order)
 
-                // Dry run the transactions, including all current pending
+                // Dry run the transactions, including all current pending of the same type
                 Portfolio pendingPortfolio = portfolio
-                pendingTransactions.each { id, pendingTransaction ->
+
+                def pendingTransactionsOfSameType = pendingTransactions.findAll { it.value.class == transaction.class }
+                pendingTransactionsOfSameType.each { id, pendingTransaction ->
                     pendingPortfolio = pendingTransaction.apply(pendingPortfolio, false)
                 }
                 pendingPortfolio = transaction.apply(pendingPortfolio, false)
+
+                def pendingTransactionsOfDifferentType = pendingTransactions.findAll { it.value.class != transaction.class }
+                pendingTransactionsOfDifferentType.each { id, pendingTransaction ->
+                    pendingTransaction.apply(pendingPortfolio, false) // Run against each one individually to make sure it would be compatible
+                }
 
                 // This would be valid, store the pending transaction
                 def submittedOrder = market.submit(order)
@@ -75,12 +87,12 @@ final class Brokers {
             return market.getOrder(orderRequest)
         }
 
-        TransferTransaction createTransaction(BuyLimitOrder limitOrder) {
+        BuyTransaction createTransaction(BuyLimitOrder limitOrder) {
             return new BuyTransaction(limitOrder.security, new Date(), limitOrder.shares, limitOrder.price,
                     commissionCost)
         }
 
-        TransferTransaction createTransaction(SellLimitOrder limitOrder) {
+        SellTransaction createTransaction(SellLimitOrder limitOrder) {
             return new SellTransaction(limitOrder.security, new Date(), limitOrder.shares, limitOrder.price,
                     commissionCost)
         }
@@ -92,10 +104,17 @@ final class Brokers {
         @Override
         void orderFilled(final OrderRequest order) {
             def transaction = pendingTransactions.remove(order.id)
+            if (transaction == null) {
+                log.error("Null transaction found for order ${order}!!! This shouldn't have happened!")
+            }
 
-            def transactionForProcessedDate = transaction.forDate(order.processedDate)
-            transactions.add(transactionForProcessedDate)
-            portfolio = transactionForProcessedDate.apply(portfolio)
+            try {
+                def transactionForProcessedDate = transaction.forDate(order.processedDate)
+                transactions.add(transactionForProcessedDate)
+                portfolio = transactionForProcessedDate.apply(portfolio)
+            } catch (IllegalArgumentException e) {
+                log.error("Unable to apply transaction to the portfolio!!! This shouldn't have happened!", e)
+            }
         }
 
         @Override

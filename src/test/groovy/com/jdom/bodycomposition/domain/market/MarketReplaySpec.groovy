@@ -48,7 +48,9 @@ class MarketReplaySpec extends Specification {
 
         SecurityService securityService = Mock()
         1 * securityService.getStocks() >> [msft, hp, fb]
-        _ * securityService.portfolioValue(_ as Portfolio, _ as Date) >> new PortfolioValue(initialPortfolio, startDate, [] as Set)
+
+        def portfolioValue = new PortfolioValue(initialPortfolio, startDate, [] as Set)
+        _ * securityService.portfolioValue(_ as Portfolio, _ as Date) >> portfolioValue
 
         DailySecurityDataDao dailySecurityDataDao = Mock()
         1 * dailySecurityDataDao.findBySecurityInAndDate([msft, hp], expectedReplayDate) >> expectedDailySecurityData
@@ -73,7 +75,7 @@ class MarketReplaySpec extends Specification {
         1 * marketEngine.processDay(expectedReplayDate)
 
         then: 'the day is replayed against the algorithm second with the daily security data entries for that date'
-        1 * algorithm.actionsForDay(_ as Broker, expectedDailySecurityData, expectedReplayDate)
+        1 * algorithm.actionsForDay(_ as Broker, portfolioValue, expectedDailySecurityData, expectedReplayDate)
 
         where:
         expectedReplayDateString | expectedDailySecurityData

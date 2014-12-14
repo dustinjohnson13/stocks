@@ -1,6 +1,7 @@
 package com.jdom.bodycomposition.domain.broker
 
 import com.jdom.bodycomposition.domain.BaseSecurity
+import com.jdom.bodycomposition.domain.Stock
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.Position
 import com.jdom.bodycomposition.domain.market.Market
@@ -25,7 +26,10 @@ class BrokersSpec extends Specification {
     OrderRequest mockOrderRequest = Mock()
 
     @Shared
-    BaseSecurity security = Mock()
+    BaseSecurity msft = new Stock(id: 1L, symbol: 'MSFT', exchange: 'NYSE')
+
+    @Shared
+    BaseSecurity fb = new Stock(id: 1L, symbol: 'FB', exchange: 'NYSE')
 
     Portfolio portfolio = new Portfolio(toMoney('$200'))
 
@@ -45,7 +49,7 @@ class BrokersSpec extends Specification {
         assert broker.commissionCost == 500L
 
         and: 'an order with a cost of $190 not including commission'
-        def order = Orders.newBuyLimitOrder(10, security, 19, Duration.DAY_ORDER)
+        def order = Orders.newBuyLimitOrder(10, msft, 19, Duration.DAY_ORDER)
 
         when: 'the order is submitted'
         broker.submit(order)
@@ -101,16 +105,16 @@ class BrokersSpec extends Specification {
 
         where:
         reason             | order
-        'shares not owned' | Orders.newSellLimitOrder(10, security, toMoney('$19'), Duration.DAY_ORDER)
-        'not enough money' | Orders.newBuyLimitOrder(10, security, toMoney('$20'), Duration.DAY_ORDER)
+        'shares not owned' | Orders.newSellLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)
+        'not enough money' | Orders.newBuyLimitOrder(10, msft, toMoney('$20'), Duration.DAY_ORDER)
     }
 
     @Unroll
     def 'should not be able to submit multiple pending orders that would result in #reason'() {
-        Portfolio portfolio = new Portfolio(toMoney('$200'), [new Position(security, 10)] as Set)
+        Portfolio portfolio = new Portfolio(toMoney('$200'), [new Position(msft, 10)] as Set)
         Broker broker = Brokers.create(market, portfolio, toMoney('$5'))
 
-        given: 'there is a pending order'
+        given: 'there are pending orders'
         broker.submit(firstOrder)
 
         when: 'another order is submitted which would result in an invalid state if the first order is filled'
@@ -120,8 +124,11 @@ class BrokersSpec extends Specification {
         thrown OrderRejectedException
 
         where:
-        reason                               | firstOrder                                                                 | secondOrder
-        'selling shares that will not exist' | Orders.newSellLimitOrder(10, security, toMoney('$19'), Duration.DAY_ORDER) | Orders.newSellLimitOrder(1, security, toMoney('$19'), Duration.DAY_ORDER)
-        'spending money that will not exist' | Orders.newBuyLimitOrder(10, security, toMoney('$19'), Duration.DAY_ORDER)  | Orders.newBuyLimitOrder(1, security, toMoney('$19'), Duration.DAY_ORDER)
+        reason                                                         | firstOrder                                                               | secondOrder
+        'selling shares that will not exist'                           | Orders.newSellLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)   | Orders.newSellLimitOrder(1, msft, toMoney('$19'), Duration.DAY_ORDER)
+        'spending money that will not exist'                           | Orders.newBuyLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)    | Orders.newBuyLimitOrder(1, msft, toMoney('$19'), Duration.DAY_ORDER)
+        'spending money that may not exist if sell orders do not fill' | Orders.newSellLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)   | Orders.newBuyLimitOrder(20, fb, toMoney('$19'), Duration.DAY_ORDER)
+        'selling shares that may not exist if buy orders do not fill'  | Orders.newBuyLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)    | Orders.newSellLimitOrder(20, msft, toMoney('$19'), Duration.DAY_ORDER)
+        'not enough cash to pay the commission if all orders fill'     | Orders.newBuyLimitOrder(10, msft, toMoney('$19.50'), Duration.DAY_ORDER) | Orders.newSellLimitOrder(1, msft, toMoney('$4'), Duration.DAY_ORDER)
     }
 }

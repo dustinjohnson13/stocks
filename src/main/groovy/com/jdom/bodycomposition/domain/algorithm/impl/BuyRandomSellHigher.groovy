@@ -63,15 +63,16 @@ class BuyRandomSellHigher implements Algorithm {
                 if ((entry.close == entry.low) && (entry.volume > EXCLUSIVE_LOW_VOLUME_REQUIRED)) { // Find an entry that closed at its low
                     // Find the number of shares that would equal approx. 1/10 of portfolio value
                     def oneTenthOfPortfolioValue = portfolioValue.marketValue() / MAX_NUMBER_OF_POSITIONS_TO_HOLD
-                    if (entry.close < oneTenthOfPortfolioValue) {
-                        def sharesToBuy = (int) (oneTenthOfPortfolioValue / entry.close)
+                    def minusCommission = oneTenthOfPortfolioValue - broker.commissionCost
+                    if (entry.close < minusCommission) {
+                        def sharesToBuy = (int) (minusCommission / entry.close)
                         if (sharesToBuy > 0) {
                             try {
                                 log.info "Buying: ${sharesToBuy} shares of ${entry.security.symbol}"
                                 broker.submit(Orders.newBuyLimitOrder(sharesToBuy, entry.security, entry.close, Duration.DAY_ORDER))
                                 submittedOrder = true
                             } catch (OrderRejectedException e) {
-                                e.printStackTrace()
+                                println e.getMessage()
                             }
                         }
                     }
@@ -90,11 +91,12 @@ class BuyRandomSellHigher implements Algorithm {
             if (purchase != null) {
                 def percentGain = MathUtil.percentChange(entry.close, purchase.price)
                 if (percentGain > PERCENTAGE_PROFIT_OR_LOSS_TO_SELL_POSITION_AT || percentGain < (-PERCENTAGE_PROFIT_OR_LOSS_TO_SELL_POSITION_AT)) {
+                    if (portfolio.cash >= broker.commissionCost)
                     try {
                         log.info "Bought ${entry.security} at ${purchase.price}, current price ${entry.close}, percent change: ${formatPercentage(percentGain)} (${percentGain}).  Selling!"
                         broker.submit(Orders.newSellLimitOrder(position.shares, position.security, entry.close, Duration.DAY_ORDER))
                     } catch (OrderRejectedException e) {
-                        e.printStackTrace()
+                        println e.getMessage()
                     }
                 }
             } else {
