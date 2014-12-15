@@ -1,5 +1,5 @@
 package com.jdom.bodycomposition.domain.market
-import com.jdom.bodycomposition.domain.Stock
+
 import com.jdom.bodycomposition.domain.algorithm.Algorithm
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction
@@ -7,6 +7,7 @@ import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.broker.Broker
 import com.jdom.bodycomposition.domain.broker.Brokers
 import com.jdom.bodycomposition.service.DailySecurityDataDao
+import com.jdom.bodycomposition.service.DailySecurityMetricsDao
 import com.jdom.bodycomposition.service.SecurityService
 import com.jdom.util.TimeUtil
 import groovy.transform.ToString
@@ -34,16 +35,11 @@ class MarketReplay implements Serializable {
 
     long duration
 
-    void replay(final DailySecurityDataDao dailySecurityDataDao, final SecurityService securityService) {
+    void replay(final DailySecurityDataDao dailySecurityDataDao,
+                final DailySecurityMetricsDao dailySecurityMetricsDao,
+                final SecurityService securityService) {
 
         long start = System.currentTimeMillis()
-
-        List<Stock> securities = securityService.getStocks()
-        for (Iterator<Stock> iter = securities.iterator(); iter.hasNext();) {
-            if (!algorithm.includeSecurity(iter.next())) {
-                iter.remove()
-            }
-        }
 
         MarketEngine marketEngine = createMarketEngine(dailySecurityDataDao)
         Broker broker = Brokers.create(marketEngine, initialPortfolio, commissionCost)
@@ -57,9 +53,10 @@ class MarketReplay implements Serializable {
             def portfolioValue = securityService.portfolioValue(broker.portfolio, currentDate)
             dailyPortfolios.add(portfolioValue)
 
-            def dailySecurityDatas = dailySecurityDataDao.findBySecurityInAndDate(securities, currentDate)
+            def dailySecurityDatas = dailySecurityDataDao.findByDate(currentDate)
+            def dailySecurityMetrics = dailySecurityMetricsDao.findByDate(currentDate)
 
-            algorithm.actionsForDay(broker, portfolioValue, dailySecurityDatas, currentDate)
+            algorithm.actionsForDay(broker, portfolioValue, dailySecurityDatas, dailySecurityMetrics, currentDate)
 
             currentDate = TimeUtil.oneDayLater(currentDate)
         }

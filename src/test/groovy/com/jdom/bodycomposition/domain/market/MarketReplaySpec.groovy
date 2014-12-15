@@ -7,6 +7,7 @@ import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.broker.Broker
 import com.jdom.bodycomposition.service.DailySecurityDataDao
+import com.jdom.bodycomposition.service.DailySecurityMetricsDao
 import com.jdom.bodycomposition.service.SecurityService
 import spock.lang.Shared
 import spock.lang.Specification
@@ -42,18 +43,17 @@ class MarketReplaySpec extends Specification {
         def expectedReplayDate = dateFromDashString(expectedReplayDateString)
 
         Algorithm algorithm = Mock()
-        1 * algorithm.includeSecurity(msft) >> true
-        1 * algorithm.includeSecurity(hp) >> true
-        1 * algorithm.includeSecurity(fb) >> false
 
         SecurityService securityService = Mock()
-        1 * securityService.getStocks() >> [msft, hp, fb]
 
         def portfolioValue = new PortfolioValue(initialPortfolio, startDate, [] as Set)
         _ * securityService.portfolioValue(_ as Portfolio, _ as Date) >> portfolioValue
 
         DailySecurityDataDao dailySecurityDataDao = Mock()
-        1 * dailySecurityDataDao.findBySecurityInAndDate([msft, hp], expectedReplayDate) >> expectedDailySecurityData
+        1 * dailySecurityDataDao.findByDate(expectedReplayDate) >> expectedDailySecurityData
+
+        DailySecurityMetricsDao dailySecurityMetricsDao = Mock()
+        1 * dailySecurityMetricsDao.findByDate(expectedReplayDate) >> []
 
         given:
         "a market replay configuration from ${startDateString} to ${endDateString}"
@@ -69,13 +69,13 @@ class MarketReplaySpec extends Specification {
         replay.endDate = endDate
 
         when: 'the market is replayed'
-        replay.replay(dailySecurityDataDao, securityService)
+        replay.replay(dailySecurityDataDao, dailySecurityMetricsDao, securityService)
 
         then: 'the day is replayed against the market engine first'
         1 * marketEngine.processDay(expectedReplayDate)
 
         then: 'the day is replayed against the algorithm second with the daily security data entries for that date'
-        1 * algorithm.actionsForDay(_ as Broker, portfolioValue, expectedDailySecurityData, expectedReplayDate)
+        1 * algorithm.actionsForDay(_ as Broker, portfolioValue, expectedDailySecurityData, _ as List, expectedReplayDate)
 
         where:
         expectedReplayDateString | expectedDailySecurityData

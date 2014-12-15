@@ -16,6 +16,8 @@ import java.util.List;
 @Repository
 public interface DailySecurityDataDao extends PagingAndSortingRepository<DailySecurityData, Long> {
 
+    List<DailySecurityData> findByDate(Date date);
+
     List<DailySecurityData> findBySecurity(BaseSecurity security);
 
     Page<DailySecurityData> findBySecurityOrderByDateDesc(BaseSecurity security, Pageable pageable);

@@ -19,10 +19,13 @@ class SimpleMarketReplayService implements MarketReplayService {
     @Autowired
     DailySecurityDataDao dailySecurityDataDao
 
+    @Autowired
+    DailySecurityMetricsDao dailySecurityMetricsDao
+
     @Override
     MarketReplay profileAlgorithm(final MarketReplay scenario) {
 
-        scenario.replay(dailySecurityDataDao, securityService)
+        scenario.replay(dailySecurityDataDao, dailySecurityMetricsDao, securityService)
 
         return scenario
     }

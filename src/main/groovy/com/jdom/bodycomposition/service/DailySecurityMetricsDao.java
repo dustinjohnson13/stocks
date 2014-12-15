@@ -6,6 +6,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by djohnson on 11/15/14.
@@ -14,5 +15,7 @@ import java.util.Date;
 public interface DailySecurityMetricsDao extends PagingAndSortingRepository<DailySecurityMetrics, Long> {
 
    DailySecurityMetrics findByDateAndFiftyTwoWeekHighSecurity(final Date date, final BaseSecurity security);
+
+   List<DailySecurityMetrics> findByDate(final Date date);
 
 }
