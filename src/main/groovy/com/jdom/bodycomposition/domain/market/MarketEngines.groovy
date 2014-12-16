@@ -1,20 +1,24 @@
 package com.jdom.bodycomposition.domain.market
-
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.market.orders.BuyLimitOrder
+import com.jdom.bodycomposition.domain.market.orders.BuyStopLimitOrder
+import com.jdom.bodycomposition.domain.market.orders.BuyStopOrder
 import com.jdom.bodycomposition.domain.market.orders.Duration
 import com.jdom.bodycomposition.domain.market.orders.LimitOrder
 import com.jdom.bodycomposition.domain.market.orders.MarketOrder
 import com.jdom.bodycomposition.domain.market.orders.Order
 import com.jdom.bodycomposition.domain.market.orders.SellLimitOrder
+import com.jdom.bodycomposition.domain.market.orders.SellStopLimitOrder
+import com.jdom.bodycomposition.domain.market.orders.SellStopOrder
+import com.jdom.bodycomposition.domain.market.orders.StopLimitOrder
+import com.jdom.bodycomposition.domain.market.orders.StopOrder
 import com.jdom.bodycomposition.service.DailySecurityDataDao
 import com.jdom.util.TimeUtil
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
 /**
  * Created by djohnson on 12/10/14.
  */
@@ -73,7 +77,6 @@ final class MarketEngines {
                     log.debug "Order [${order.id}] is being processed."
                 }
                 switch (order.status) {
-                    // Skip these orders, they're done types
                     case OrderStatus.EXECUTED:
                     case OrderStatus.CANCELLED:
                     case OrderStatus.REJECTED:
@@ -94,11 +97,23 @@ final class MarketEngines {
 
                 def processedOrder = order
                 switch (order.order) {
+                    case StopLimitOrder:
+                        if (log.isDebugEnabled()) {
+                            log.debug "Processing stop limit order [${order.id}]."
+                        }
+                        processedOrder = processStopLimitOrder(order, order.order, securityData)
+                        break;
                     case LimitOrder:
                         if (log.isDebugEnabled()) {
                             log.debug "Processing limit order [${order.id}]."
                         }
                         processedOrder = processLimitOrder(order, order.order, securityData)
+                        break;
+                    case StopOrder:
+                        if (log.isDebugEnabled()) {
+                            log.debug "Processing stop order [${order.id}]."
+                        }
+                        processedOrder = processStopOrder(order, order.order, securityData)
                         break;
                     case MarketOrder:
                         if (log.isDebugEnabled()) {
@@ -180,6 +195,18 @@ final class MarketEngines {
             return order
         }
 
+        OrderRequestImpl processStopLimitOrder(OrderRequestImpl order, BuyStopLimitOrder limitOrder, DailySecurityData securityData) {
+            processLimitOrder(order, limitOrder) {
+                limitOrder.price < securityData.low
+            }
+        }
+
+        OrderRequestImpl processStopLimitOrder(OrderRequestImpl order, SellStopLimitOrder limitOrder, DailySecurityData securityData) {
+            processLimitOrder(order, limitOrder) {
+                limitOrder.price > securityData.high
+            }
+        }
+
         OrderRequestImpl processLimitOrder(OrderRequestImpl order, BuyLimitOrder limitOrder, DailySecurityData securityData) {
             processLimitOrder(order, limitOrder) {
                 limitOrder.price < securityData.low
@@ -192,42 +219,73 @@ final class MarketEngines {
             }
         }
 
+        OrderRequestImpl processStopOrder(OrderRequestImpl order, BuyStopOrder stopOrder, DailySecurityData securityData) {
+            processStopOrder(order, stopOrder) {
+                stopOrder.stopPrice < securityData.low
+            }
+        }
+
+        OrderRequestImpl processStopOrder(OrderRequestImpl order, SellStopOrder stopOrder, DailySecurityData securityData) {
+            processStopOrder(order, stopOrder) {
+                stopOrder.stopPrice > securityData.high
+            }
+        }
+
         OrderRequestImpl processLimitOrder(OrderRequestImpl order, LimitOrder limitOrder, Closure<Boolean> unfillable) {
             if (unfillable.call()) {
                 if (log.isDebugEnabled()) {
                     log.debug "Order [${order.id}] cannot be filled."
                 }
-                if (limitOrder.duration == Duration.DAY_ORDER) {
-                    if (log.isDebugEnabled()) {
-                        log.debug "Order [${order.id}] is a day order, cancelling it."
-                    }
-                    return new OrderRequestImpl(order, OrderStatus.CANCELLED, currentDate)
-                } else {
-                    Date oneYearAfterSubmission = new Date(order.submissionDate.time + TimeUtil.MILLIS_PER_YEAR)
-                    if (!oneYearAfterSubmission.after(currentDate)) {
-                        if (log.isDebugEnabled()) {
-                            log.debug "Order [${order.id}] is more than one year old, cancelling it."
-                        }
-                        return new OrderRequestImpl(order, OrderStatus.CANCELLED, currentDate)
-                    }
-                    if (log.isDebugEnabled()) {
-                        log.debug "Order [${order.id}] is a GTC order, but not more than a year old, returning it to be tried tomorrow."
-                    }
-                    return order
-                }
+                return checkForCancellation(order)
             }
+            return executeOrder(order, limitOrder.price)
+        }
 
+        OrderRequestImpl processStopOrder(OrderRequestImpl order, StopOrder stopOrder, Closure<Boolean> unfillable) {
+            if (unfillable.call()) {
+                if (log.isDebugEnabled()) {
+                    log.debug "Order [${order.id}] cannot be filled."
+                }
+                return checkForCancellation(order)
+            }
+            return executeOrder(order, stopOrder.stopPrice)
+        }
+
+        OrderRequestImpl executeOrder(OrderRequestImpl order, long price) {
             if (log.isDebugEnabled()) {
                 log.debug "Order [${order.id}] can be filled, executing it."
             }
-            return new OrderRequestImpl(order, OrderStatus.EXECUTED, currentDate, limitOrder.price)
+            return new OrderRequestImpl(order, OrderStatus.EXECUTED, currentDate, price)
+        }
+
+        OrderRequestImpl checkForCancellation(OrderRequestImpl order) {
+            if (order.order.duration == Duration.DAY_ORDER) {
+                if (log.isDebugEnabled()) {
+                    log.debug "Order [${order.id}] is a day order, cancelling it."
+                }
+                return new OrderRequestImpl(order, OrderStatus.CANCELLED, currentDate)
+            }
+
+            Date oneYearAfterSubmission = new Date(order.submissionDate.time + TimeUtil.MILLIS_PER_YEAR)
+            if (!oneYearAfterSubmission.after(currentDate)) {
+                if (log.isDebugEnabled()) {
+                    log.debug "Order [${order.id}] is more than one year old, cancelling it."
+                }
+                return new OrderRequestImpl(order, OrderStatus.CANCELLED, currentDate)
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug "Order [${order.id}] is a GTC order, but not more than a year old, returning it to be tried tomorrow."
+            }
+            return order
         }
     }
 
     @EqualsAndHashCode(includes = ['id'])
-    @ToString
+    @ToString(includePackage = false)
     private static class OrderRequestImpl implements OrderRequest, Comparable<OrderRequest> {
-        private final Order order
+        private static final String NOT_EXECUTED_PRICE = 'N/A'
+        final Order order
         final String id
         final Date submissionDate
         final OrderStatus status
@@ -243,10 +301,11 @@ final class MarketEngines {
         }
 
         private OrderRequestImpl(OrderRequest order, OrderStatus newStatus, Date processedDate) {
-            this(order, newStatus, processedDate, Long.MIN_VALUE)
+            this(order, newStatus, processedDate, 0)
         }
 
-        private OrderRequestImpl(OrderRequest order, OrderStatus newStatus, Date processedDate, final long executionPrice) {
+        private OrderRequestImpl(OrderRequest order, OrderStatus newStatus, Date processedDate,
+                                 final long executionPrice) {
             this.order = order
             this.id = order.id
             this.submissionDate = order.submissionDate

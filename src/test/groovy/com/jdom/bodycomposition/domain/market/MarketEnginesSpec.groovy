@@ -1,4 +1,5 @@
 package com.jdom.bodycomposition.domain.market
+
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.market.orders.Duration
 import com.jdom.bodycomposition.domain.market.orders.Orders
@@ -18,6 +19,7 @@ import spock.lang.Unroll
 import javax.transaction.Transactional
 
 import static com.jdom.util.TimeUtil.dateFromDashString
+
 /**
  * Created by djohnson on 12/10/14.
  */
@@ -86,7 +88,7 @@ class MarketEnginesSpec extends Specification {
     def 'should fill open #type limit order at its price if the price is within the high and low for the day'() {
 
         def order = ('buy' == type) ? Orders.newBuyLimitOrder(10, msft, limitPrice, duration) :
-                Orders.newSellLimitOrder(10, msft, limitPrice, duration)
+              Orders.newSellLimitOrder(10, msft, limitPrice, duration)
 
         given: 'a #type limit order submitted before day start'
         def submittedOrder = market.submit(order)
@@ -129,7 +131,7 @@ class MarketEnginesSpec extends Specification {
     def 'should not fill open #type limit order at its price if the price is above the low/high for the day'() {
 
         def order = ('buy' == type) ? Orders.newBuyLimitOrder(10, msft, limitPrice, duration) :
-                Orders.newSellLimitOrder(10, msft, limitPrice, duration)
+              Orders.newSellLimitOrder(10, msft, limitPrice, duration)
 
         given: 'a #type limit order submitted before day start'
         def submittedOrder = market.submit(order)
@@ -164,12 +166,12 @@ class MarketEnginesSpec extends Specification {
     }
 
     @Unroll
-    def 'should cancel open #type limit order after one year if the limit price is always above the low/high for the day'() {
+    def 'should cancel open stop #type order after one year if the stop price is always above the low/high for the day'() {
 
-        def order = ('buy' == type) ? Orders.newBuyLimitOrder(10, msft, limitPrice, Duration.GTC) :
-                Orders.newSellLimitOrder(10, msft, limitPrice, Duration.GTC)
+        def order = ('buy' == type) ? Orders.newBuyStopOrder(10, msft, stopPrice, Duration.GTC) :
+              Orders.newSellStopOrder(10, msft, stopPrice, Duration.GTC)
 
-        given: 'a #type limit order submitted before day start with a price that will not be reached in the next year'
+        given: 'a #type stop order submitted before day start with a price that will not be reached in the next year'
         def submittedOrder = market.submit(order)
 
         when: 'the order was submitted successfully'
@@ -194,9 +196,193 @@ class MarketEnginesSpec extends Specification {
         1 * listener.orderCancelled(_ as OrderRequest)
 
         where:
-        type   | limitPrice
+        type   | stopPrice
         'buy'  | 2
         'sell' | 10000
+    }
+
+    @Unroll
+    def 'should not fill open #type stop order at its price if the price is above the low/high for the day'() {
+
+        def order = ('buy' == type) ? Orders.newBuyStopOrder(10, msft, stopPrice, duration) :
+              Orders.newSellStopOrder(10, msft, stopPrice, duration)
+
+        given: 'a #type stop order submitted before day start'
+        def submittedOrder = market.submit(order)
+
+        and: 'the order was submitted successfully'
+        submittedOrder.id != null
+        submittedOrder.status == OrderStatus.OPEN
+
+        when: 'the market processes the next day'
+        market.processDay(mondayMarketDay)
+
+        def processedOrder = market.getOrder(submittedOrder)
+        then: 'the order is not processed'
+        processedOrder
+        processedOrder.status == expectedStatus
+
+        and: 'the listener was notified if the order was cancelled'
+        if (expectedStatus == OrderStatus.CANCELLED) {
+            1 * listener.orderCancelled(_ as OrderRequest)
+        }
+
+        where:
+        type   | stopPrice | duration           | expectedStatus
+        'buy'  | 3805      | Duration.GTC       | OrderStatus.OPEN // 1 cent below low price
+        'buy'  | 3706      | Duration.GTC       | OrderStatus.OPEN // 1 dollar below low price
+        'buy'  | 3805      | Duration.DAY_ORDER | OrderStatus.CANCELLED // 1 cent below low price
+        'buy'  | 3706      | Duration.DAY_ORDER | OrderStatus.CANCELLED // 1 dollar below low price
+        'sell' | 3879      | Duration.GTC       | OrderStatus.OPEN // 1 cent above high price
+        'sell' | 3978      | Duration.GTC       | OrderStatus.OPEN // 1 dollar above high price
+        'sell' | 3879      | Duration.DAY_ORDER | OrderStatus.CANCELLED // 1 cent above high price
+        'sell' | 3978      | Duration.DAY_ORDER | OrderStatus.CANCELLED // 1 dollar above high price
+    }
+
+    @Unroll
+    def 'should cancel open #type stop order after one year if the stop price is always above the low/high for the day'() {
+
+        def order = ('buy' == type) ? Orders.newBuyStopOrder(10, msft, stopPrice, Duration.GTC) :
+              Orders.newSellStopOrder(10, msft, stopPrice, Duration.GTC)
+
+        given: 'a #type stop order submitted before day start with a price that will not be reached in the next year'
+        def submittedOrder = market.submit(order)
+
+        when: 'the order was submitted successfully'
+        submittedOrder.id != null
+        submittedOrder.status == OrderStatus.OPEN
+
+        then: 'the order is left open for one year'
+        364.times {
+            sundayNonMarketDay = TimeUtil.oneDayLater(sundayNonMarketDay)
+            market.processDay(sundayNonMarketDay)
+
+            def processedOrder = market.getOrder(submittedOrder)
+            assert processedOrder.status == OrderStatus.OPEN
+        }
+
+        then: 'the next day the order is cancelled'
+        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
+        def processedOrder = market.getOrder(submittedOrder)
+        processedOrder.status == OrderStatus.CANCELLED
+
+        then: 'the listener is notified'
+        1 * listener.orderCancelled(_ as OrderRequest)
+
+        where:
+        type   | stopPrice
+        'buy'  | 2
+        'sell' | 10000
+    }
+
+    @Unroll
+    def 'should cancel open stop limit #type order after one year if the limit price is always above the low/high for the day'() {
+
+        def order = ('buy' == type) ? Orders.newBuyStopLimitOrder(10, msft, stopPrice, limitPrice, Duration.GTC) :
+              Orders.newSellStopLimitOrder(10, msft, stopPrice, limitPrice, Duration.GTC)
+
+        given: 'a #type stop limit order submitted before day start with a price that will not be reached in the next year'
+        def submittedOrder = market.submit(order)
+
+        when: 'the order was submitted successfully'
+        submittedOrder.id != null
+        submittedOrder.status == OrderStatus.OPEN
+
+        then: 'the order is left open for one year'
+        364.times {
+            sundayNonMarketDay = TimeUtil.oneDayLater(sundayNonMarketDay)
+            market.processDay(sundayNonMarketDay)
+
+            def processedOrder = market.getOrder(submittedOrder)
+            assert processedOrder.status == OrderStatus.OPEN
+        }
+
+        then: 'the next day the order is cancelled'
+        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
+        def processedOrder = market.getOrder(submittedOrder)
+        processedOrder.status == OrderStatus.CANCELLED
+
+        then: 'the listener is notified'
+        1 * listener.orderCancelled(_ as OrderRequest)
+
+        where:
+        type   | stopPrice | limitPrice
+        'buy'  | 3         | 2
+        'sell' | 10001     | 10000
+    }
+
+    @Unroll
+    def 'should not fill open #type stop limit order at its limit price if the stop price is hit but the limit price is above/below the low/high for the day'() {
+
+        def order = ('buy' == type) ? Orders.newBuyStopLimitOrder(10, msft, stopPrice, limitPrice, duration) :
+              Orders.newSellStopLimitOrder(10, msft, stopPrice, limitPrice, duration)
+
+        given: 'a #type stop limit order submitted before day start'
+        def submittedOrder = market.submit(order)
+
+        and: 'the order was submitted successfully'
+        submittedOrder.id != null
+        submittedOrder.status == OrderStatus.OPEN
+
+        when: 'the market processes the next day'
+        market.processDay(mondayMarketDay)
+
+        def processedOrder = market.getOrder(submittedOrder)
+        then: 'the order is not processed'
+        processedOrder
+        processedOrder.status == expectedStatus
+
+        and: 'the listener was notified if the order was cancelled'
+        if (expectedStatus == OrderStatus.CANCELLED) {
+            1 * listener.orderCancelled(_ as OrderRequest)
+        }
+
+        where:
+        type   | stopPrice | limitPrice | duration           | expectedStatus
+        'buy'  | 3806      | 3805       | Duration.GTC       | OrderStatus.OPEN // 1 cent below low price
+        'buy'  | 3806      | 3706       | Duration.GTC       | OrderStatus.OPEN // 1 dollar below low price
+        'buy'  | 3806      | 3805       | Duration.DAY_ORDER | OrderStatus.CANCELLED // 1 cent below low price
+        'buy'  | 3806      | 3706       | Duration.DAY_ORDER | OrderStatus.CANCELLED // 1 dollar below low price
+        'sell' | 3878      | 3879       | Duration.GTC       | OrderStatus.OPEN // 1 cent above high price
+        'sell' | 3868      | 3978       | Duration.GTC       | OrderStatus.OPEN // 1 dollar above high price
+        'sell' | 3878      | 3879       | Duration.DAY_ORDER | OrderStatus.CANCELLED // 1 cent above high price
+        'sell' | 4078      | 3978       | Duration.DAY_ORDER | OrderStatus.CANCELLED // 1 dollar above high price
+    }
+
+    @Unroll
+    def 'should cancel open #type stop limit order after one year if the limit price is always above the low/high for the day'() {
+
+        def order = ('buy' == type) ? Orders.newBuyStopLimitOrder(10, msft, stopPrice, limitPrice, Duration.GTC) :
+              Orders.newSellStopLimitOrder(10, msft, stopPrice, limitPrice, Duration.GTC)
+
+        given: 'a #type stop order submitted before day start with a price that will not be reached in the next year'
+        def submittedOrder = market.submit(order)
+
+        when: 'the order was submitted successfully'
+        submittedOrder.id != null
+        submittedOrder.status == OrderStatus.OPEN
+
+        then: 'the order is left open for one year'
+        364.times {
+            sundayNonMarketDay = TimeUtil.oneDayLater(sundayNonMarketDay)
+            market.processDay(sundayNonMarketDay)
+
+            def processedOrder = market.getOrder(submittedOrder)
+            assert processedOrder.status == OrderStatus.OPEN
+        }
+
+        then: 'the next day the order is cancelled'
+        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
+        def processedOrder = market.getOrder(submittedOrder)
+        processedOrder.status == OrderStatus.CANCELLED
+
+        then: 'the listener is notified'
+        1 * listener.orderCancelled(_ as OrderRequest)
+
+        where:
+        type   | stopPrice | limitPrice
+        'buy'  | 3800      | 2
+        'sell' | 3800      | 10000
     }
 
     def 'should consider order status listener registration idempotent, order cancelling'() {

@@ -1,5 +1,7 @@
 package com.jdom.bodycomposition.domain.market.orders
 import com.jdom.bodycomposition.domain.BaseSecurity
+import groovy.transform.ToString
+
 /**
  * Created by djohnson on 12/10/14.
  */
@@ -60,6 +62,7 @@ final class Orders {
         return new SellMarketOnCloseOrderImpl(shares, security, Qualifier.NONE)
     }
 
+    @ToString(includePackage = false)
     private static class BaseOrder implements Order {
         final int shares
         final BaseSecurity security
@@ -86,6 +89,7 @@ final class Orders {
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class BaseOrderWithDuration extends BaseOrder {
         final Duration duration
 
@@ -95,13 +99,14 @@ final class Orders {
         }
     }
 
-
+    @ToString(includeSuper = true, includePackage = false)
     private static class BaseMarketOrder extends BaseOrder implements MarketOrder {
         protected BaseMarketOrder(int shares, BaseSecurity security, Qualifier qualifier) {
             super(shares, security, qualifier)
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class BaseLimitOrder extends BaseOrderWithDuration implements LimitOrder {
         final long price
 
@@ -111,6 +116,7 @@ final class Orders {
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class BaseStopOrder extends BaseOrderWithDuration implements StopOrder {
         final long stopPrice
 
@@ -120,6 +126,7 @@ final class Orders {
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class BaseStopLimitOrder extends BaseLimitOrder implements StopLimitOrder {
         final long stopPrice
 
@@ -129,60 +136,70 @@ final class Orders {
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class BuyLimitOrderImpl extends BaseLimitOrder implements BuyLimitOrder {
         private BuyLimitOrderImpl(int shares, BaseSecurity security, long price, Duration duration, Qualifier qualifier) {
             super(shares, security, price, duration, qualifier)
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class SellLimitOrderImpl extends BaseLimitOrder implements SellLimitOrder {
         private SellLimitOrderImpl(int shares, BaseSecurity security, long price, Duration duration, Qualifier qualifier) {
             super(shares, security, price, duration, qualifier)
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class BuyMarketOrderImpl extends BaseMarketOrder implements BuyMarketOrder {
         private BuyMarketOrderImpl(int shares, BaseSecurity security, Qualifier qualifier) {
             super(shares, security, qualifier)
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class SellMarketOrderImpl extends BaseMarketOrder implements SellMarketOrder {
         private SellMarketOrderImpl(int shares, BaseSecurity security, Qualifier qualifier) {
             super(shares, security, qualifier)
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class BuyStopOrderImpl extends BaseStopOrder implements BuyStopOrder {
         private BuyStopOrderImpl(int shares, BaseSecurity security, long stopPrice, Duration duration, Qualifier qualifier) {
             super(shares, security, stopPrice, duration, qualifier)
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class SellStopOrderImpl extends BaseStopOrder implements SellStopOrder {
         private SellStopOrderImpl(int shares, BaseSecurity security, long stopPrice, Duration duration, Qualifier qualifier) {
             super(shares, security, stopPrice, duration, qualifier)
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class BuyStopLimitOrderImpl extends BaseStopLimitOrder implements BuyStopLimitOrder {
         private BuyStopLimitOrderImpl(int shares, BaseSecurity security, long stopPrice, long price, Duration duration, Qualifier qualifier) {
             super(shares, security, stopPrice, price, duration, qualifier)
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class SellStopLimitOrderImpl extends BaseStopLimitOrder implements SellStopLimitOrder {
         private SellStopLimitOrderImpl(int shares, BaseSecurity security, long stopPrice, long price, Duration duration, Qualifier qualifier) {
             super(shares, security, stopPrice, price, duration, qualifier)
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class BuyMarketOnCloseOrderImpl extends BaseMarketOrder implements BuyMarketOnCloseOrder {
         private BuyMarketOnCloseOrderImpl(int shares, BaseSecurity security, Qualifier qualifier) {
             super(shares, security, qualifier)
         }
     }
 
+    @ToString(includeSuper = true, includePackage = false)
     private static class SellMarketOnCloseOrderImpl extends BaseMarketOrder implements SellMarketOnCloseOrder {
         private SellMarketOnCloseOrderImpl(int shares, BaseSecurity security, Qualifier qualifier) {
             super(shares, security, qualifier)
