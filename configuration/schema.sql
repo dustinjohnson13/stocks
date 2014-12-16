@@ -30,15 +30,22 @@ DROP TABLE IF EXISTS `security`;
 CREATE TABLE `security` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `symbol` varchar(16) NOT NULL,
-  `name` varchar(100) NOT NULL,
   `exchange` varchar(3) NOT NULL,
-  `category` varchar(50) DEFAULT NULL,
-  `country` varchar(50) NOT NULL,
-  `category_number` int(3) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `symbol_exchange` (`symbol`,`exchange`)
 ) ENGINE=InnoDB AUTO_INCREMENT=16384 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+DROP TABLE IF EXISTS `security_details`;
+CREATE TABLE `security_details` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `category` varchar(50) DEFAULT NULL,
+  `country` varchar(50) NOT NULL,
+  `category_number` int(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `id_security_id_fk` FOREIGN KEY (`id`) REFERENCES `security` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 DROP TABLE IF EXISTS `security_daily_data`;
 CREATE TABLE `security_daily_data` (

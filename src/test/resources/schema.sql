@@ -3,12 +3,17 @@ TRUNCATE SCHEMA public AND COMMIT;
 CREATE TABLE IF NOT EXISTS security(
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (start with 1),
     symbol VARCHAR(16) NOT NULL,
-    name VARCHAR(100) NOT NULL,
     exchange VARCHAR(3) NOT NULL,
+    CONSTRAINT unique_symbol_exchange UNIQUE (symbol, exchange)
+);
+
+CREATE TABLE IF NOT EXISTS security_details(
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
     category VARCHAR(50) DEFAULT NULL,
     country VARCHAR(50) NOT NULL,
     category_number INTEGER NOT NULL,
-    CONSTRAINT unique_symbol_exchange UNIQUE (symbol, exchange)
+    CONSTRAINT fk_id_security_id FOREIGN KEY (id) REFERENCES security(id)
 );
 
 CREATE TABLE IF NOT EXISTS security_daily_data(

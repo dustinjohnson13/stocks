@@ -20,17 +20,5 @@ class BaseSecurity implements Serializable {
     String symbol
 
     @Column
-    String name
-
-    @Column
     String exchange
-
-    @Column
-    String category
-
-    @Column
-    String country
-
-    @Column(name = 'category_number')
-    int categoryNumber
 }
