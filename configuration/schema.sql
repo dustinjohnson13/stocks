@@ -52,19 +52,17 @@ CREATE TABLE `security_daily_data` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `security_id` int(11) NOT NULL,
   `date` date NOT NULL,
-  `open` int unsigned NOT NULL,
-  `close` int unsigned NOT NULL,
-  `high` int unsigned NOT NULL,
-  `low` int unsigned NOT NULL,
-  `volume` bigint unsigned NOT NULL,
-  `adjusted_close` int unsigned NOT NULL,
+  `open` int(10) unsigned NOT NULL,
+  `close` int(10) unsigned NOT NULL,
+  `high` int(10) unsigned NOT NULL,
+  `low` int(10) unsigned NOT NULL,
+  `volume` bigint(20) unsigned NOT NULL,
+  `adjusted_close` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
-  FOREIGN KEY (security_id) REFERENCES security(id)
-  ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=16384 DEFAULT CHARSET=latin1;
-
-ALTER TABLE security_daily_data ADD CONSTRAINT security_date_idx
-UNIQUE (security_id, date);
+  UNIQUE KEY `date_security_idx` (`date`,`security_id`),
+  KEY `security_id` (`security_id`),
+  CONSTRAINT `security_daily_data_ibfk_1` FOREIGN KEY (`security_id`) REFERENCES `security` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=36759217 DEFAULT CHARSET=latin1;
 
 DROP TABLE IF EXISTS `security_daily_metrics`;
 CREATE TABLE `security_daily_metrics` (
@@ -73,9 +71,12 @@ CREATE TABLE `security_daily_metrics` (
   `fifty_two_week_high` int(11) NOT NULL,
   `fifty_two_week_low` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  FOREIGN KEY (fifty_two_week_high) REFERENCES security_daily_data(id),
-  FOREIGN KEY (fifty_two_week_low) REFERENCES security_daily_data(id)
-) ENGINE=InnoDB AUTO_INCREMENT=16384 DEFAULT CHARSET=latin1;
+  KEY `fifty_two_week_high` (`fifty_two_week_high`),
+  KEY `fifty_two_week_low` (`fifty_two_week_low`),
+  KEY `date` (`date`),
+  CONSTRAINT `security_daily_metrics_ibfk_1` FOREIGN KEY (`fifty_two_week_high`) REFERENCES `security_daily_data` (`id`),
+  CONSTRAINT `security_daily_metrics_ibfk_2` FOREIGN KEY (`fifty_two_week_low`) REFERENCES `security_daily_data` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=36659080 DEFAULT CHARSET=latin1;
 
 --
 -- Dumping data for table `security`

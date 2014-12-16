@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS security_daily_data(
   low INTEGER NOT NULL,
   volume BIGINT NOT NULL,
   adjusted_close INTEGER NOT NULL,
-  CONSTRAINT fk_security_id FOREIGN KEY (security_id) REFERENCES security(id)
+  CONSTRAINT fk_security_id FOREIGN KEY (security_id) REFERENCES security(id),
+  CONSTRAINT unique_date_security UNIQUE (date, security_id)
 );
 
 CREATE TABLE IF NOT EXISTS security_daily_metrics(
@@ -37,3 +38,4 @@ CREATE TABLE IF NOT EXISTS security_daily_metrics(
   CONSTRAINT fk_fifty_two_week_high FOREIGN KEY (fifty_two_week_high) REFERENCES security_daily_data(id),
   CONSTRAINT fk_fifty_two_week_low FOREIGN KEY (fifty_two_week_low) REFERENCES security_daily_data(id)
 );
+CREATE INDEX daily_metrics_date_idx ON security_daily_metrics(date);
