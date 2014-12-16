@@ -1,6 +1,7 @@
 package com.jdom.bodycomposition.domain.market
 
 import com.jdom.bodycomposition.domain.BaseSecurity
+import com.jdom.bodycomposition.domain.broker.Broker
 import com.jdom.bodycomposition.domain.market.orders.Duration
 import com.jdom.bodycomposition.domain.market.orders.Orders
 import com.jdom.bodycomposition.service.DailySecurityDataDao
@@ -41,7 +42,7 @@ class MarketEnginesSpec extends Specification {
 
     MarketEngine market
 
-    OrderProcessedListener listener = Mock()
+    Broker broker = Mock()
 
     def sundayNonMarketDay = dateFromDashString('2013-12-01')
     def mondayMarketDay = dateFromDashString('2013-12-02')
@@ -50,7 +51,6 @@ class MarketEnginesSpec extends Specification {
         fb = securityDao.findBySymbol('FB')
         msft = securityDao.findBySymbol('MSFT')
         market = MarketEngines.create(dailySecurityDataDao)
-        market.registerOrderFilledListener(listener)
         market.processDay(sundayNonMarketDay)
     }
 
@@ -60,7 +60,7 @@ class MarketEnginesSpec extends Specification {
         def order = ('buy' == type) ? Orders.newBuyMarketOrder(10, msft) : Orders.newSellMarketOrder(10, msft)
 
         given: 'a #type market order submitted at the end of the day'
-        def submittedOrder = market.submit(order)
+        def submittedOrder = market.submit(broker, order)
 
         and: 'the order was submitted successfully'
         submittedOrder.id != null
@@ -77,8 +77,8 @@ class MarketEnginesSpec extends Specification {
         and: 'the order was executed at open price'
         processedOrder.executionPrice == 3809
 
-        and: 'the listener was notified'
-        listener.orderFilled(processedOrder)
+        and: 'the broker was notified'
+        broker.orderFilled(processedOrder)
 
         where:
         type << ['buy', 'sell']
@@ -91,7 +91,7 @@ class MarketEnginesSpec extends Specification {
               Orders.newSellLimitOrder(10, msft, limitPrice, duration)
 
         given: 'a #type limit order submitted before day start'
-        def submittedOrder = market.submit(order)
+        def submittedOrder = market.submit(broker, order)
 
         and: 'the order was submitted successfully'
         submittedOrder.id != null
@@ -108,8 +108,8 @@ class MarketEnginesSpec extends Specification {
         and: 'the order was executed at the limit price'
         processedOrder.executionPrice == order.price
 
-        and: 'the listener was notified'
-        listener.orderFilled(processedOrder)
+        and: 'the broker was notified'
+        broker.orderFilled(processedOrder)
 
         where:
         type   | limitPrice | duration
@@ -134,7 +134,7 @@ class MarketEnginesSpec extends Specification {
               Orders.newSellLimitOrder(10, msft, limitPrice, duration)
 
         given: 'a #type limit order submitted before day start'
-        def submittedOrder = market.submit(order)
+        def submittedOrder = market.submit(broker, order)
 
         and: 'the order was submitted successfully'
         submittedOrder.id != null
@@ -148,9 +148,9 @@ class MarketEnginesSpec extends Specification {
         processedOrder
         processedOrder.status == expectedStatus
 
-        and: 'the listener was notified if the order was cancelled'
+        and: 'the broker was notified if the order was cancelled'
         if (expectedStatus == OrderStatus.CANCELLED) {
-            1 * listener.orderCancelled(_ as OrderRequest)
+            1 * broker.orderCancelled(_ as OrderRequest)
         }
 
         where:
@@ -172,7 +172,7 @@ class MarketEnginesSpec extends Specification {
               Orders.newSellStopOrder(10, msft, stopPrice, Duration.GTC)
 
         given: 'a #type stop order submitted before day start with a price that will not be reached in the next year'
-        def submittedOrder = market.submit(order)
+        def submittedOrder = market.submit(broker, order)
 
         when: 'the order was submitted successfully'
         submittedOrder.id != null
@@ -192,8 +192,8 @@ class MarketEnginesSpec extends Specification {
         def processedOrder = market.getOrder(submittedOrder)
         processedOrder.status == OrderStatus.CANCELLED
 
-        then: 'the listener is notified'
-        1 * listener.orderCancelled(_ as OrderRequest)
+        then: 'the broker is notified'
+        1 * broker.orderCancelled(_ as OrderRequest)
 
         where:
         type   | stopPrice
@@ -208,7 +208,7 @@ class MarketEnginesSpec extends Specification {
               Orders.newSellStopOrder(10, msft, stopPrice, duration)
 
         given: 'a #type stop order submitted before day start'
-        def submittedOrder = market.submit(order)
+        def submittedOrder = market.submit(broker, order)
 
         and: 'the order was submitted successfully'
         submittedOrder.id != null
@@ -222,9 +222,9 @@ class MarketEnginesSpec extends Specification {
         processedOrder
         processedOrder.status == expectedStatus
 
-        and: 'the listener was notified if the order was cancelled'
+        and: 'the broker was notified if the order was cancelled'
         if (expectedStatus == OrderStatus.CANCELLED) {
-            1 * listener.orderCancelled(_ as OrderRequest)
+            1 * broker.orderCancelled(_ as OrderRequest)
         }
 
         where:
@@ -246,7 +246,7 @@ class MarketEnginesSpec extends Specification {
               Orders.newSellStopOrder(10, msft, stopPrice, Duration.GTC)
 
         given: 'a #type stop order submitted before day start with a price that will not be reached in the next year'
-        def submittedOrder = market.submit(order)
+        def submittedOrder = market.submit(broker, order)
 
         when: 'the order was submitted successfully'
         submittedOrder.id != null
@@ -266,8 +266,8 @@ class MarketEnginesSpec extends Specification {
         def processedOrder = market.getOrder(submittedOrder)
         processedOrder.status == OrderStatus.CANCELLED
 
-        then: 'the listener is notified'
-        1 * listener.orderCancelled(_ as OrderRequest)
+        then: 'the broker is notified'
+        1 * broker.orderCancelled(_ as OrderRequest)
 
         where:
         type   | stopPrice
@@ -282,7 +282,7 @@ class MarketEnginesSpec extends Specification {
               Orders.newSellStopLimitOrder(10, msft, stopPrice, limitPrice, Duration.GTC)
 
         given: 'a #type stop limit order submitted before day start with a price that will not be reached in the next year'
-        def submittedOrder = market.submit(order)
+        def submittedOrder = market.submit(broker, order)
 
         when: 'the order was submitted successfully'
         submittedOrder.id != null
@@ -302,8 +302,8 @@ class MarketEnginesSpec extends Specification {
         def processedOrder = market.getOrder(submittedOrder)
         processedOrder.status == OrderStatus.CANCELLED
 
-        then: 'the listener is notified'
-        1 * listener.orderCancelled(_ as OrderRequest)
+        then: 'the broker is notified'
+        1 * broker.orderCancelled(_ as OrderRequest)
 
         where:
         type   | stopPrice | limitPrice
@@ -318,7 +318,7 @@ class MarketEnginesSpec extends Specification {
               Orders.newSellStopLimitOrder(10, msft, stopPrice, limitPrice, duration)
 
         given: 'a #type stop limit order submitted before day start'
-        def submittedOrder = market.submit(order)
+        def submittedOrder = market.submit(broker, order)
 
         and: 'the order was submitted successfully'
         submittedOrder.id != null
@@ -332,9 +332,9 @@ class MarketEnginesSpec extends Specification {
         processedOrder
         processedOrder.status == expectedStatus
 
-        and: 'the listener was notified if the order was cancelled'
+        and: 'the broker was notified if the order was cancelled'
         if (expectedStatus == OrderStatus.CANCELLED) {
-            1 * listener.orderCancelled(_ as OrderRequest)
+            1 * broker.orderCancelled(_ as OrderRequest)
         }
 
         where:
@@ -356,7 +356,7 @@ class MarketEnginesSpec extends Specification {
               Orders.newSellStopLimitOrder(10, msft, stopPrice, limitPrice, Duration.GTC)
 
         given: 'a #type stop order submitted before day start with a price that will not be reached in the next year'
-        def submittedOrder = market.submit(order)
+        def submittedOrder = market.submit(broker, order)
 
         when: 'the order was submitted successfully'
         submittedOrder.id != null
@@ -376,8 +376,8 @@ class MarketEnginesSpec extends Specification {
         def processedOrder = market.getOrder(submittedOrder)
         processedOrder.status == OrderStatus.CANCELLED
 
-        then: 'the listener is notified'
-        1 * listener.orderCancelled(_ as OrderRequest)
+        then: 'the broker is notified'
+        1 * broker.orderCancelled(_ as OrderRequest)
 
         where:
         type   | stopPrice | limitPrice
@@ -385,45 +385,9 @@ class MarketEnginesSpec extends Specification {
         'sell' | 3800      | 10000
     }
 
-    def 'should consider order status listener registration idempotent, order cancelling'() {
-
-        def order = Orders.newBuyLimitOrder(10, msft, 1L, Duration.DAY_ORDER)
-
-        given: 'the same listener is registered more than once'
-        market.registerOrderFilledListener(listener)
-        market.registerOrderFilledListener(listener)
-
-        and: 'a limit order that will not be executed is submitted'
-        market.submit(order)
-
-        when: 'an order is cancelled'
-        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
-
-        then: 'the listener will only be notified once'
-        1 * listener.orderCancelled(_ as OrderRequest)
-    }
-
-    def 'should consider order status listener registration idempotent, order filling'() {
-
-        def order = Orders.newBuyLimitOrder(10, msft, 1000000L, Duration.DAY_ORDER)
-
-        given: 'the same listener is registered more than once'
-        market.registerOrderFilledListener(listener)
-        market.registerOrderFilledListener(listener)
-
-        and: 'a limit order that will be executed is submitted'
-        market.submit(order)
-
-        when: 'an order is filled'
-        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
-
-        then: 'the listener will only be notified once'
-        1 * listener.orderFilled(_ as OrderRequest)
-    }
-
-    def 'should throw exception when trying to register a null listener'() {
+    def 'should throw exception when submitting an order with a null broker'() {
         when: 'a null listener is registered'
-        market.registerOrderFilledListener(null)
+        market.submit(null, Orders.newBuyLimitOrder(10, msft, 1000000L, Duration.DAY_ORDER))
 
         then: 'an exception is thrown'
         thrown IllegalArgumentException
@@ -435,17 +399,17 @@ class MarketEnginesSpec extends Specification {
         def secondOrder = Orders.newBuyLimitOrder(10, fb, 1000000L, Duration.DAY_ORDER)
 
         given: 'one order is submitted'
-        def firstOrderRequest = market.submit(firstOrder)
+        def firstOrderRequest = market.submit(broker, firstOrder)
 
         and: 'another order is submitted the same day for a different security'
-        def secondOrderRequest = market.submit(secondOrder)
+        def secondOrderRequest = market.submit(broker, secondOrder)
 
         when: 'the market day is processed'
         market.processDay(mondayMarketDay)
 
         then: 'both orders should have been filled'
-        1 * listener.orderFilled(firstOrderRequest)
-        1 * listener.orderFilled(secondOrderRequest)
+        1 * broker.orderFilled(firstOrderRequest)
+        1 * broker.orderFilled(secondOrderRequest)
     }
 
 }

@@ -39,7 +39,7 @@ class BrokersSpec extends Specification {
 
         _ * mockOrderRequest.id >> 'orderId'
 
-        _ * market.submit(_ as Order) >> mockOrderRequest
+        _ * market.submit(_ as Broker, _ as Order) >> mockOrderRequest
     }
 
     def 'should submit order through to market'() {
@@ -55,23 +55,19 @@ class BrokersSpec extends Specification {
         broker.submit(order)
 
         then: 'the order is submitted to the market'
-        1 * market.submit(order) >> mockOrderRequest
+        1 * market.submit(broker, order) >> mockOrderRequest
     }
 
     def 'should pass request for order status through to market'() {
 
-        Portfolio portfolio = new Portfolio(toMoney('$200'))
-        Broker broker = Brokers.create(market, portfolio, toMoney('$5'))
-        OrderRequest order = Mock()
-
         when: 'an order status is submitted'
-        def status = broker.getOrder(order)
+        def status = broker.getOrder(mockOrderRequest)
 
         then: 'the order status is passed through to the market'
-        1 * market.getOrder(order) >> order
+        1 * market.getOrder(mockOrderRequest) >> mockOrderRequest
 
         and: 'the result is returned to the user'
-        status.is(order)
+        status.is(mockOrderRequest)
     }
 
     def 'should be able to retrieve the portfolio'() {
@@ -94,8 +90,6 @@ class BrokersSpec extends Specification {
 
     @Unroll
     def 'should not be able to submit invalid orders: #reason'() {
-        Portfolio portfolio = new Portfolio(toMoney('$200'))
-        Broker broker = Brokers.create(market, portfolio, toMoney('$5'))
 
         when: 'an invalid order is submitted'
         def processedOrder = broker.submit(order)

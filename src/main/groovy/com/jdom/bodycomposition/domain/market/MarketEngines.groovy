@@ -1,6 +1,7 @@
 package com.jdom.bodycomposition.domain.market
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
+import com.jdom.bodycomposition.domain.broker.Broker
 import com.jdom.bodycomposition.domain.market.orders.BuyLimitOrder
 import com.jdom.bodycomposition.domain.market.orders.BuyStopLimitOrder
 import com.jdom.bodycomposition.domain.market.orders.BuyStopOrder
@@ -36,7 +37,7 @@ final class MarketEngines {
     private static class DailyDataDrivenMarketEngine implements MarketEngine {
         private final TreeSet<OrderRequestImpl> openOrders = []
         private final TreeSet<OrderRequestImpl> processedOrders = []
-        private final List<OrderProcessedListener> listeners = []
+        private final orderIdBrokerAssociations = [:]
         final DailySecurityDataDao dailySecurityDataDao
         Date currentDate
 
@@ -45,13 +46,21 @@ final class MarketEngines {
         }
 
         @Override
-        OrderRequest submit(final Order marketOrder) {
-            if (log.isDebugEnabled()) {
-                log.debug "Order [$marketOrder] was received."
+        OrderRequest submit(final Broker broker, final Order order) {
+
+            if (broker == null) {
+                throw new IllegalArgumentException('Broker must not be null!')
+            } else if (order == null) {
+                throw new IllegalArgumentException('Order must not be null!')
             }
 
-            def orderRequest = new OrderRequestImpl(marketOrder, currentDate)
+            if (log.isDebugEnabled()) {
+                log.debug "Order [$order] was received."
+            }
+
+            def orderRequest = new OrderRequestImpl(order, currentDate)
             openOrders.add(orderRequest)
+            orderIdBrokerAssociations.put(orderRequest.id, broker)
 
             if (log.isDebugEnabled()) {
                 log.debug "Open orders:\n${openOrders}"
@@ -133,7 +142,7 @@ final class MarketEngines {
                         log.debug "Added [${processedOrder.id}] to processed orders."
                     }
                     processedOrders.add(processedOrder)
-                    notifyListeners(processedOrder)
+                    notifyBroker(processedOrder)
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug "Added [${processedOrder.id}] back to open orders."
@@ -155,34 +164,29 @@ final class MarketEngines {
             }
         }
 
-        @Override
-        void registerOrderFilledListener(final OrderProcessedListener listener) {
-            if (listener == null) {
-                throw new IllegalArgumentException("Cannot register a null OrderFilledListener!")
-            }
-            if (!listeners.contains(listener)) {
-                listeners.add(listener)
-            }
-        }
-
-        void notifyListeners(OrderRequest processedOrder) {
+        void notifyBroker(OrderRequest processedOrder) {
             if (log.isDebugEnabled()) {
-                log.debug "Notifying ${listeners.size()} listeners of processed order [${processedOrder.id}]."
+                log.debug "Notifying broker of processed order [${processedOrder.id}]."
             }
-            listeners.each {
-                if (processedOrder.status == OrderStatus.EXECUTED) {
-                    if (log.isDebugEnabled()) {
-                        log.debug "Listener notified that order [${processedOrder.id}] was filled."
-                    }
-                    it.orderFilled(processedOrder)
-                } else if (processedOrder.status == OrderStatus.CANCELLED) {
-                    if (log.isDebugEnabled()) {
-                        log.debug "Listener notified that order [${processedOrder.id}] was cancelled."
-                    }
-                    it.orderCancelled(processedOrder)
-                } else {
-                    throw new IllegalArgumentException("Unknown OrderStatus ${processedOrder.status} for notifying listeners!")
+
+            Broker broker = orderIdBrokerAssociations.remove(processedOrder.id)
+            if (broker == null) {
+                log.error "Unable to find broker associated with order ${processedOrder.id}!"
+                return
+            }
+
+            if (processedOrder.status == OrderStatus.EXECUTED) {
+                if (log.isDebugEnabled()) {
+                    log.debug "Broker notified that order [${processedOrder.id}] was filled."
                 }
+                broker.orderFilled(processedOrder)
+            } else if (processedOrder.status == OrderStatus.CANCELLED) {
+                if (log.isDebugEnabled()) {
+                    log.debug "Broker notified that order [${processedOrder.id}] was cancelled."
+                }
+                broker.orderCancelled(processedOrder)
+            } else {
+                throw new IllegalArgumentException("Unknown OrderStatus ${processedOrder.status} for notifying broker!")
             }
         }
 

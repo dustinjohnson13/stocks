@@ -1,12 +1,10 @@
 package com.jdom.bodycomposition.domain.broker
-
 import com.jdom.bodycomposition.domain.algorithm.BuyTransaction
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction
 import com.jdom.bodycomposition.domain.algorithm.SellTransaction
 import com.jdom.bodycomposition.domain.algorithm.TransferTransaction
 import com.jdom.bodycomposition.domain.market.Market
-import com.jdom.bodycomposition.domain.market.OrderProcessedListener
 import com.jdom.bodycomposition.domain.market.OrderRequest
 import com.jdom.bodycomposition.domain.market.orders.BuyLimitOrder
 import com.jdom.bodycomposition.domain.market.orders.Order
@@ -16,7 +14,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import javax.transaction.Transaction
-
 /**
  * Created by djohnson on 12/11/14.
  */
@@ -29,7 +26,7 @@ final class Brokers {
         return new DefaultBroker(market, portfolio, commissionCost)
     }
 
-    private static class DefaultBroker implements Broker, OrderProcessedListener {
+    private static class DefaultBroker implements Broker {
 
         private static final Logger log = LoggerFactory.getLogger(DefaultBroker)
 
@@ -44,8 +41,6 @@ final class Brokers {
             this.market = market
             this.portfolio = portfolio
             this.commissionCost = commissionCost
-
-            market.registerOrderFilledListener(this)
         }
 
         public Portfolio getPortfolio() {
@@ -74,7 +69,7 @@ final class Brokers {
                 }
 
                 // This would be valid, store the pending transaction
-                def submittedOrder = market.submit(order)
+                def submittedOrder = market.submit(this, order)
                 pendingTransactions.put(submittedOrder.id, transaction)
                 return submittedOrder
             } catch (Exception e) {
@@ -106,6 +101,7 @@ final class Brokers {
             def transaction = pendingTransactions.remove(order.id)
             if (transaction == null) {
                 log.error("Null transaction found for order ${order}!!! This shouldn't have happened!")
+                return
             }
 
             try {

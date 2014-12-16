@@ -19,4 +19,8 @@ interface Broker {
     long getCommissionCost()
 
     List<PortfolioTransaction> getTransactions()
+
+    void orderFilled(final OrderRequest order)
+
+    void orderCancelled(final OrderRequest order)
 }
