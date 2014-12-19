@@ -1,4 +1,5 @@
 package com.jdom.bodycomposition.service
+
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.DailySecurityMetrics
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
@@ -15,6 +16,7 @@ import javax.transaction.Transactional
 
 import static com.jdom.util.MathUtil.toMoney
 import static com.jdom.util.TimeUtil.dateFromDashString
+
 /**
  * Created by djohnson on 11/15/14.
  */
@@ -91,13 +93,19 @@ class SimpleSecurityServiceSpec extends Specification {
         metrics.fiftyTwoWeekLow.date == dateFromDashString(expected52WkLowDate)
         metrics.fiftyTwoWeekLow.low == toMoney(expected52WkLowValue)
         metrics.date == dailyData.date
+        metrics.fiveDayMovingAverage == toMoney(fiveDayMovingAverage)
+        metrics.tenDayMovingAverage == toMoney(tenDayMovingAverage)
+        metrics.twentyDayMovingAverage == toMoney(twentyDayMovingAverage)
+        metrics.fiftyDayMovingAverage == toMoney(fiftyDayMovingAverage)
+        metrics.hundredDayMovingAverage == toMoney(hundredDayMovingAverage)
+        metrics.twoHundredDayMovingAverage == toMoney(twoHundredDayMovingAverage)
 
         where:
-        high     | low      | expected52WkHighDate | expected52WkHighValue | expected52WkLowDate | expected52WkLowValue
-        '$48.97' | '$48.38' | '2014-11-14'         | '$50.05'              | '2014-01-14'        | '$34.63' // Today neither 52 week high or low
-        '$50.06' | '$48.38' | '2014-12-08'         | '$50.06'              | '2014-01-14'        | '$34.63' // Today 52 week high
-        '$48.97' | '$34.62' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.62' // Today 52 week low
-        '$50.05' | '$48.38' | '2014-12-08'         | '$50.05'              | '2014-01-14'        | '$34.63' // Today matches 52 week high
-        '$48.97' | '$34.63' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.63' // Today matches 52 week low
+        high     | low      | expected52WkHighDate | expected52WkHighValue | expected52WkLowDate | expected52WkLowValue | fiveDayMovingAverage | tenDayMovingAverage | twentyDayMovingAverage | fiftyDayMovingAverage | hundredDayMovingAverage | twoHundredDayMovingAverage
+        '$48.97' | '$48.38' | '2014-11-14'         | '$50.05'              | '2014-01-14'        | '$34.63'             | '$48.44'             | '$48.15'            | '$48.51'               | '$46.86'              | '$45.97'                | '$43.12'// Today neither 52 week high or low
+        '$50.06' | '$48.38' | '2014-12-08'         | '$50.06'              | '2014-01-14'        | '$34.63'             | '$48.44'             | '$48.15'            | '$48.51'               | '$46.86'              | '$45.97'                | '$43.12'// Today 52 week high
+        '$48.97' | '$34.62' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.62'             | '$48.44'             | '$48.15'            | '$48.51'               | '$46.86'              | '$45.97'                | '$43.12'// Today 52 week low
+        '$50.05' | '$48.38' | '2014-12-08'         | '$50.05'              | '2014-01-14'        | '$34.63'             | '$48.44'             | '$48.15'            | '$48.51'               | '$46.86'              | '$45.97'                | '$43.12'// Today matches 52 week high
+        '$48.97' | '$34.63' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.63'             | '$48.44'             | '$48.15'            | '$48.51'               | '$46.86'              | '$45.97'                | '$43.12'// Today matches 52 week low
     }
 }

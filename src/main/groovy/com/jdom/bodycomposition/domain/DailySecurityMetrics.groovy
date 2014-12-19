@@ -34,4 +34,21 @@ class DailySecurityMetrics implements Serializable {
     @JoinColumn(name = 'fifty_two_week_low')
     DailySecurityData fiftyTwoWeekLow
 
+    @Column(name = 'five_day_moving_average')
+    Long fiveDayMovingAverage
+
+    @Column(name = 'ten_day_moving_average')
+    Long tenDayMovingAverage
+
+    @Column(name = 'twenty_day_moving_average')
+    Long twentyDayMovingAverage
+
+    @Column(name = 'fifty_day_moving_average')
+    Long fiftyDayMovingAverage
+
+    @Column(name = 'hundred_day_moving_average')
+    Long hundredDayMovingAverage
+
+    @Column(name = 'two_hundred_day_moving_average')
+    Long twoHundredDayMovingAverage
 }

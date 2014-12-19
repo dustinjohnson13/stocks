@@ -1,5 +1,7 @@
 package com.jdom.util
-
+import com.tictactec.ta.lib.Core
+import com.tictactec.ta.lib.MInteger
+import com.tictactec.ta.lib.RetCode
 /**
  * Created by djohnson on 11/16/14.
  */
@@ -51,5 +53,35 @@ class MathUtil {
         long percentage = (numerator * multiplier) / denominator
 
         return (percentage - 10000)
+    }
+
+    static long[] simpleMovingAverage(long[] values, int period) {
+
+        if (values.length < period) {
+            throw new IllegalArgumentException("At least ${period} values must be passed to calculate with the given period.")
+        }
+
+        double[] doubleValues = new double[values.length]
+        for (int i = 0; i < values.length; i++) {
+            doubleValues[i] = values[i]
+        }
+
+        def core = new Core()
+        double[] output = new double[values.length]
+        RetCode retCode = core.sma(0, values.length - 1, doubleValues, period, new MInteger(), new MInteger(), output)
+        if (retCode != RetCode.Success) {
+            throw new IllegalStateException("Ta-Lib error: ${retCode}")
+        }
+
+        long[] retVal = new long[output.length]
+        int j = 0
+        for (int i = output.length - 1; i > output.length - period; i--) {
+            retVal[j++] = Math.round(output[i])
+        }
+        for (int i = 0; i < output.length - (period - 1); i++) {
+            retVal[j++] = Math.round(output[i])
+        }
+
+        return retVal
     }
 }

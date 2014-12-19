@@ -34,6 +34,12 @@ CREATE TABLE IF NOT EXISTS security_daily_metrics(
   id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (start with 1),
   fifty_two_week_high INTEGER NOT NULL,
   fifty_two_week_low INTEGER NOT NULL,
+  five_day_moving_average INTEGER,
+  ten_day_moving_average INTEGER,
+  twenty_day_moving_average INTEGER,
+  fifty_day_moving_average INTEGER,
+  hundred_day_moving_average INTEGER,
+  two_hundred_day_moving_average INTEGER,
   date date NOT NULL,
   CONSTRAINT fk_fifty_two_week_high FOREIGN KEY (fifty_two_week_high) REFERENCES security_daily_data(id),
   CONSTRAINT fk_fifty_two_week_low FOREIGN KEY (fifty_two_week_low) REFERENCES security_daily_data(id)

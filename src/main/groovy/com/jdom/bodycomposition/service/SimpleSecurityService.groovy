@@ -7,6 +7,7 @@ import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.algorithm.Position
 import com.jdom.bodycomposition.domain.algorithm.PositionValue
+import com.jdom.util.MathUtil
 import com.jdom.util.TimeUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -91,8 +92,36 @@ class SimpleSecurityService implements SecurityService {
             fiftyTwoWeekLow = dailySecurityData
 
         }
+
+        Page<DailySecurityData> last200 = dailySecurityDataDao.findBySecurityOrderByDateDesc(
+              dailySecurityData.security, new PageRequest(0, 200))
+        List<DailySecurityData> content = last200.hasContent() ?  new ArrayList<DailySecurityData>(last200.getContent()) : new ArrayList<DailySecurityData>();
+        content.add(dailySecurityData)
+
+        def movingAverages = [(5):null, (10):null, (20):null, (50):null, (100):null, (200):null]
+
+
+        long[] dailyCloses = new long[content.size()]
+        if (dailyCloses.length > 4) {
+            content.eachWithIndex { DailySecurityData entry, int i ->
+                dailyCloses[dailyCloses.length - (i + 1)] = entry.close
+            }
+
+            movingAverages.keySet().each { movingAveragePeriod ->
+                if (dailyCloses.length < movingAveragePeriod) {
+                    return
+                }
+
+                Long movingAverage = MathUtil.simpleMovingAverage(dailyCloses, movingAveragePeriod)[dailyCloses.length - 1]
+                movingAverages.put(movingAveragePeriod, movingAverage)
+            }
+        }
+
         return new DailySecurityMetrics(date: dailySecurityDataDate,
-              fiftyTwoWeekHigh: fiftyTwoWeekHigh, fiftyTwoWeekLow: fiftyTwoWeekLow)
+              fiftyTwoWeekHigh: fiftyTwoWeekHigh, fiftyTwoWeekLow: fiftyTwoWeekLow,
+        fiveDayMovingAverage: movingAverages.get(5), tenDayMovingAverage: movingAverages.get(10),
+        twentyDayMovingAverage: movingAverages.get(20), fiftyDayMovingAverage: movingAverages.get(50),
+        hundredDayMovingAverage: movingAverages.get(100), twoHundredDayMovingAverage: movingAverages.get(200))
     }
 
     @Override
