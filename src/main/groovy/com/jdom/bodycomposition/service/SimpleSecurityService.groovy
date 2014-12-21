@@ -1,4 +1,5 @@
 package com.jdom.bodycomposition.service
+
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.DailySecurityMetrics
@@ -7,7 +8,10 @@ import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.algorithm.Position
 import com.jdom.bodycomposition.domain.algorithm.PositionValue
+import com.jdom.util.BollingerBands
+import com.jdom.util.MACD
 import com.jdom.util.MathUtil
+import com.jdom.util.Stochastic
 import com.jdom.util.TimeUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -21,6 +25,7 @@ import org.springframework.stereotype.Service
 import javax.transaction.Transactional
 
 import static com.jdom.util.TimeUtil.dashString
+
 /**
  * Created by djohnson on 11/14/14.
  */
@@ -95,33 +100,95 @@ class SimpleSecurityService implements SecurityService {
 
         Page<DailySecurityData> last200 = dailySecurityDataDao.findBySecurityOrderByDateDesc(
               dailySecurityData.security, new PageRequest(0, 200))
-        List<DailySecurityData> content = last200.hasContent() ?  new ArrayList<DailySecurityData>(last200.getContent()) : new ArrayList<DailySecurityData>();
-        content.add(dailySecurityData)
 
-        def movingAverages = [(5):null, (10):null, (20):null, (50):null, (100):null, (200):null]
+        if (!last200.hasContent()) {
+            throw new IllegalStateException("Why wasn't there content to calculate metrics?  We just inserted a day's entry!")
+        }
 
+        List<DailySecurityData> content = last200.getContent()
+
+        def smas = [(5): null, (10): null, (20): null, (50): null, (100): null, (200): null]
+        def emas = [(5): null, (10): null, (20): null, (50): null, (100): null, (200): null]
+        MACD macd = null
+        Stochastic fast = null
+        Stochastic slow = null
+        Integer relativeStrengthIndex = null
+        Integer williamsR = null
+        BollingerBands bbands = null
+        Integer commodityChannelIndex = null
 
         long[] dailyCloses = new long[content.size()]
+        long[] dailyHighs = new long[content.size()]
+        long[] dailyLows = new long[content.size()]
         if (dailyCloses.length > 4) {
             content.eachWithIndex { DailySecurityData entry, int i ->
                 dailyCloses[dailyCloses.length - (i + 1)] = entry.close
+                dailyHighs[dailyHighs.length - (i + 1)] = entry.high
+                dailyLows[dailyLows.length - (i + 1)] = entry.low
             }
 
-            movingAverages.keySet().each { movingAveragePeriod ->
+            smas.keySet().each { movingAveragePeriod ->
                 if (dailyCloses.length < movingAveragePeriod) {
                     return
                 }
 
                 Long movingAverage = MathUtil.simpleMovingAverage(dailyCloses, movingAveragePeriod)[dailyCloses.length - 1]
-                movingAverages.put(movingAveragePeriod, movingAverage)
+                smas.put(movingAveragePeriod, movingAverage)
+                Long ema = MathUtil.exponentialMovingAverage(dailyCloses, movingAveragePeriod)[dailyCloses.length - 1]
+                emas.put(movingAveragePeriod, ema)
+            }
+
+            if (dailyCloses.length > MACD.TOO_FEW_DAYS_FOR_WINDOW) {
+                macd = MathUtil.macd(dailyCloses, 12, 26, 9)
+            }
+            if (dailyCloses.length > Stochastic.TOO_FEW_DAYS_FOR_WINDOW_FOR_FAST) {
+                fast = MathUtil.fastStochastic(dailyHighs, dailyLows, dailyCloses, 14, 3)
+
+                if (dailyCloses.length > Stochastic.TOO_FEW_DAYS_FOR_WINDOW_FOR_SLOW) {
+                    slow = MathUtil.slowStochastic(dailyHighs, dailyLows, dailyCloses, 14, 3, 3)
+                }
+            }
+
+            if (dailyCloses.length > 10) {
+                relativeStrengthIndex = MathUtil.relativeStrengthIndex(dailyCloses, 10)
+            }
+            if (dailyCloses.length > 19) {
+                williamsR = MathUtil.williamsR(dailyHighs, dailyLows, dailyCloses, 14)
+                bbands = MathUtil.bollingerBands(dailyCloses, 20)
+                commodityChannelIndex = MathUtil.commodityChannelIndex(dailyHighs, dailyLows, dailyCloses, 20)
             }
         }
 
-        return new DailySecurityMetrics(date: dailySecurityDataDate,
+        def metrics = new DailySecurityMetrics(date: dailySecurityDataDate,
               fiftyTwoWeekHigh: fiftyTwoWeekHigh, fiftyTwoWeekLow: fiftyTwoWeekLow,
-        fiveDayMovingAverage: movingAverages.get(5), tenDayMovingAverage: movingAverages.get(10),
-        twentyDayMovingAverage: movingAverages.get(20), fiftyDayMovingAverage: movingAverages.get(50),
-        hundredDayMovingAverage: movingAverages.get(100), twoHundredDayMovingAverage: movingAverages.get(200))
+              fiveDaySimpleMovingAverage: smas.get(5), tenDaySimpleMovingAverage: smas.get(10),
+              twentyDaySimpleMovingAverage: smas.get(20), fiftyDaySimpleMovingAverage: smas.get(50),
+              hundredDaySimpleMovingAverage: smas.get(100), twoHundredDaySimpleMovingAverage: smas.get(200),
+              fiveDayExponentialMovingAverage: emas.get(5), tenDayExponentialMovingAverage: emas.get(10),
+              twentyDayExponentialMovingAverage: emas.get(20), fiftyDayExponentialMovingAverage: emas.get(50),
+              hundredDayExponentialMovingAverage: emas.get(100), twoHundredDayExponentialMovingAverage: emas.get(200),
+              relativeStrengthIndex: relativeStrengthIndex, williamsR: williamsR,
+              commodityChannelIndex: commodityChannelIndex
+        )
+
+        if (macd) {
+            metrics.macd = macd.value
+            metrics.macdSignal = macd.signal
+        }
+        if (fast) {
+            metrics.fastStochasticOscillatorK = fast.k
+            metrics.fastStochasticOscillatorD = fast.d
+        }
+        if (slow) {
+            metrics.slowStochasticOscillatorK = slow.k
+            metrics.slowStochasticOscillatorD = slow.d
+        }
+        if (bbands) {
+            metrics.bollingerBandsLower = bbands.lower
+            metrics.bollingerBandsUpper = bbands.upper
+        }
+
+        return metrics
     }
 
     @Override

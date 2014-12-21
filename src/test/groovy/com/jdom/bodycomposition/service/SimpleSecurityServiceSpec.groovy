@@ -70,7 +70,7 @@ class SimpleSecurityServiceSpec extends Specification {
     }
 
     @Unroll
-    def 'should insert daily metrics when daily security data is inserted, 52WkHigh #expected52WkHighDate, 52WkLow #expected52WkLowDate'() {
+    def 'should insert 52 week highs and lows when daily security data is inserted, 52WkHigh #expected52WkHighDate, 52WkLow #expected52WkLowDate'() {
         def msft = service.findSecurityBySymbol('MSFT')
 
         given: 'a new daily security data is persisted'
@@ -83,29 +83,81 @@ class SimpleSecurityServiceSpec extends Specification {
 
         then: 'a new daily metrics entry was inserted'
         DailySecurityMetrics metrics = service.findDailySecurityMetricsBySecurityAndDate(msft, dailyData.date)
-
-        and: 'the daily metrics entry has the correct values'
         metrics.id != null
+        metrics.date == dailyData.date
+
+        and: 'the 52 week highs and lows have the correct values'
         metrics.fiftyTwoWeekHigh != null
         metrics.fiftyTwoWeekHigh.date == dateFromDashString(expected52WkHighDate)
         metrics.fiftyTwoWeekHigh.high == toMoney(expected52WkHighValue)
         metrics.fiftyTwoWeekLow != null
         metrics.fiftyTwoWeekLow.date == dateFromDashString(expected52WkLowDate)
         metrics.fiftyTwoWeekLow.low == toMoney(expected52WkLowValue)
-        metrics.date == dailyData.date
-        metrics.fiveDayMovingAverage == toMoney(fiveDayMovingAverage)
-        metrics.tenDayMovingAverage == toMoney(tenDayMovingAverage)
-        metrics.twentyDayMovingAverage == toMoney(twentyDayMovingAverage)
-        metrics.fiftyDayMovingAverage == toMoney(fiftyDayMovingAverage)
-        metrics.hundredDayMovingAverage == toMoney(hundredDayMovingAverage)
-        metrics.twoHundredDayMovingAverage == toMoney(twoHundredDayMovingAverage)
 
         where:
-        high     | low      | expected52WkHighDate | expected52WkHighValue | expected52WkLowDate | expected52WkLowValue | fiveDayMovingAverage | tenDayMovingAverage | twentyDayMovingAverage | fiftyDayMovingAverage | hundredDayMovingAverage | twoHundredDayMovingAverage
-        '$48.97' | '$48.38' | '2014-11-14'         | '$50.05'              | '2014-01-14'        | '$34.63'             | '$48.44'             | '$48.15'            | '$48.51'               | '$46.86'              | '$45.97'                | '$43.12'// Today neither 52 week high or low
-        '$50.06' | '$48.38' | '2014-12-08'         | '$50.06'              | '2014-01-14'        | '$34.63'             | '$48.44'             | '$48.15'            | '$48.51'               | '$46.86'              | '$45.97'                | '$43.12'// Today 52 week high
-        '$48.97' | '$34.62' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.62'             | '$48.44'             | '$48.15'            | '$48.51'               | '$46.86'              | '$45.97'                | '$43.12'// Today 52 week low
-        '$50.05' | '$48.38' | '2014-12-08'         | '$50.05'              | '2014-01-14'        | '$34.63'             | '$48.44'             | '$48.15'            | '$48.51'               | '$46.86'              | '$45.97'                | '$43.12'// Today matches 52 week high
-        '$48.97' | '$34.63' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.63'             | '$48.44'             | '$48.15'            | '$48.51'               | '$46.86'              | '$45.97'                | '$43.12'// Today matches 52 week low
+        high     | low      | expected52WkHighDate | expected52WkHighValue | expected52WkLowDate | expected52WkLowValue
+        '$48.97' | '$48.38' | '2014-11-14'         | '$50.05'              | '2014-01-14'        | '$34.63' // Today neither 52 week high or low
+        '$50.06' | '$48.38' | '2014-12-08'         | '$50.06'              | '2014-01-14'        | '$34.63' // Today 52 week high
+        '$48.97' | '$34.62' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.62' // Today 52 week low
+        '$50.05' | '$48.38' | '2014-12-08'         | '$50.05'              | '2014-01-14'        | '$34.63' // Today matches 52 week high
+        '$48.97' | '$34.63' | '2014-11-14'         | '$50.05'              | '2014-12-08'        | '$34.63' // Today matches 52 week low
+    }
+
+    def 'should insert technical analysis data when daily security data is inserted'() {
+        def msft = service.findSecurityBySymbol('MSFT')
+
+        given: 'a new daily security data is persisted'
+        DailySecurityData dailyData = new DailySecurityData(security: msft, date: dateFromDashString('2014-12-08'),
+              open: toMoney('$48.26'), close: toMoney('$47.70'), high: toMoney('$48.35'), low: toMoney('$47.44'),
+              volume: 26663107, adjustedClose: toMoney('$48.42'))
+
+        when: 'new security daily data is inserted'
+        service.save(dailyData)
+
+        then: 'a new daily metrics entry was inserted'
+        DailySecurityMetrics metrics = service.findDailySecurityMetricsBySecurityAndDate(msft, dailyData.date)
+        metrics.id != null
+        metrics.date == dailyData.date
+
+        and: 'the simple moving averages have the correct values'
+        metrics.fiveDaySimpleMovingAverage == toMoney('$48.30')
+        metrics.tenDaySimpleMovingAverage == toMoney('$48.07')
+        metrics.twentyDaySimpleMovingAverage == toMoney('$48.48')
+        metrics.fiftyDaySimpleMovingAverage == toMoney('$46.84')
+        metrics.hundredDaySimpleMovingAverage == toMoney('$45.96')
+        metrics.twoHundredDaySimpleMovingAverage == toMoney('$43.12')
+        
+        and: 'the exponential moving averages have the correct values'
+        metrics.fiveDayExponentialMovingAverage == toMoney('$48.17')
+        metrics.tenDayExponentialMovingAverage == toMoney('$48.21')
+        metrics.twentyDayExponentialMovingAverage == toMoney('$48.07')
+        metrics.fiftyDayExponentialMovingAverage == toMoney('$47.21')
+        metrics.hundredDayExponentialMovingAverage == toMoney('$45.85')
+        metrics.twoHundredDayExponentialMovingAverage == toMoney('$43.12')
+
+        and: 'the MACD has the correct values'
+        metrics.macd == 30l
+        metrics.macdSignal == 43l
+
+        and: 'the fast stochastic oscillator values are correct'
+        metrics.fastStochasticOscillatorK == 20
+        metrics.fastStochasticOscillatorD == 41
+
+        and: 'the slow stochastic oscillator values are correct'
+        metrics.slowStochasticOscillatorK == 41
+        metrics.slowStochasticOscillatorD == 43
+
+        and: 'the relative strength index is correct'
+        metrics.relativeStrengthIndex == 45
+
+        and: 'the williams %R is correct'
+        metrics.williamsR == -80
+
+        and: 'the bollinger band values are correct'
+        metrics.bollingerBandsLower == 4721
+        metrics.bollingerBandsUpper == 4974
+
+        and: 'the commodity channel index is correct'
+        metrics.commodityChannelIndex == -92
     }
 }
