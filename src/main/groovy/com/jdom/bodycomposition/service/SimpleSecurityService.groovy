@@ -1,5 +1,4 @@
 package com.jdom.bodycomposition.service
-
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.DailySecurityMetrics
@@ -23,9 +22,6 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 
 import javax.transaction.Transactional
-
-import static com.jdom.util.TimeUtil.dashString
-
 /**
  * Created by djohnson on 11/14/14.
  */
@@ -35,7 +31,7 @@ class SimpleSecurityService implements SecurityService {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleSecurityService)
 
-    static final int MAX_DAILY_SECURITY_DATAS_PER_PAGE = 1000
+    private static final Date EARLIEST_ALLOWED_DATE = TimeUtil.dateFromDashString('1960-01-01')
 
     @Autowired
     StockDao stockDao
@@ -63,49 +59,45 @@ class SimpleSecurityService implements SecurityService {
     }
 
     private DailySecurityMetrics calculateDailyMetrics(final DailySecurityData dailySecurityData) {
-        def dailySecurityDataDate = dailySecurityData.date
         def cal = Calendar.getInstance()
-        cal.setTime(dailySecurityDataDate)
+        cal.setTime(dailySecurityData.date)
         cal.add(Calendar.WEEK_OF_YEAR, -52)
         def fiftyTwoWeeksAgo = cal.getTime()
 
-        log.info("Searching for the 52 week high and low for security [${dailySecurityData.security.symbol}] " +
-              "using date range ${dashString(dailySecurityDataDate)} to ${dashString(fiftyTwoWeeksAgo)}.")
+        Page<DailySecurityData> last52WeeksWorthOfEntries = dailySecurityDataDao.findBySecurityAndDateBetweenOrderByDateDesc(
+                dailySecurityData.security, fiftyTwoWeeksAgo, dailySecurityData.getDate(), new PageRequest(0, 365))
 
-        Page<DailySecurityData> highPage = dailySecurityDataDao.findBySecurityAndDateBetweenOrderByHighDesc(
-              dailySecurityData.security, fiftyTwoWeeksAgo, dailySecurityDataDate, new PageRequest(0, 1))
-
-        def fiftyTwoWeekHigh;
-        if (highPage.hasContent()) {
-            fiftyTwoWeekHigh = highPage.getContent()[0]
-        } else {
-            log.error("No results for the 52 week high value!  Defaulting to use today, but that should have been found " +
-                  "in the query!")
-
-            fiftyTwoWeekHigh = dailySecurityData
-        }
-
-        Page<DailySecurityData> lowPage = dailySecurityDataDao.findBySecurityAndDateBetweenOrderByLowAsc(
-              dailySecurityData.security, fiftyTwoWeeksAgo, dailySecurityDataDate, new PageRequest(0, 1))
-        def fiftyTwoWeekLow;
-        if (lowPage.hasContent()) {
-            fiftyTwoWeekLow = lowPage.getContent()[0]
-        } else {
-            log.error("No results for the 52 week low value!  Defaulting to use today, but that should have been found " +
-                  "in the query!")
-
-            fiftyTwoWeekLow = dailySecurityData
-
-        }
-
-        Page<DailySecurityData> last200 = dailySecurityDataDao.findBySecurityOrderByDateDesc(
-              dailySecurityData.security, new PageRequest(0, 200))
-
-        if (!last200.hasContent()) {
+        if (!last52WeeksWorthOfEntries.hasContent()) {
             throw new IllegalStateException("Why wasn't there content to calculate metrics?  We just inserted a day's entry!")
         }
 
-        List<DailySecurityData> content = last200.getContent()
+        List<DailySecurityData> content = new ArrayList<>(last52WeeksWorthOfEntries.getContent())
+        Collections.reverse(content)
+
+        return calculateDailyMetrics(dailySecurityData, content)
+    }
+
+    private DailySecurityMetrics calculateDailyMetrics(final DailySecurityData dailySecurityData, List<DailySecurityData> entriesUpTo52WeeksAgo) {
+
+        def fiftyTwoWeekHigh = dailySecurityData
+        def fiftyTwoWeekLow = dailySecurityData
+        for (DailySecurityData entry : entriesUpTo52WeeksAgo) {
+            if (entry.high > fiftyTwoWeekHigh.high) {
+                fiftyTwoWeekHigh = entry
+            }
+            if (entry.low < fiftyTwoWeekLow.low) {
+                fiftyTwoWeekLow = entry
+            }
+        }
+
+//        log.info "Using earliest date: ${entriesUpTo52WeeksAgo.get(0).getDate()}"
+//        log.info "Using latest date: ${entriesUpTo52WeeksAgo.get(entriesUpTo52WeeksAgo.size() - 1).getDate()}"
+//        log.info "Using entry date: ${dailySecurityData.getDate()}"
+
+
+        def startIndex = Math.max(0, entriesUpTo52WeeksAgo.size() - 200)
+        List<DailySecurityData> newest200Entries = entriesUpTo52WeeksAgo.subList(startIndex, entriesUpTo52WeeksAgo.size())
+        assert newest200Entries.size() < 201
 
         def smas = [(5): null, (10): null, (20): null, (50): null, (100): null, (200): null]
         def emas = [(5): null, (10): null, (20): null, (50): null, (100): null, (200): null]
@@ -117,14 +109,14 @@ class SimpleSecurityService implements SecurityService {
         BollingerBands bbands = null
         Integer commodityChannelIndex = null
 
-        long[] dailyCloses = new long[content.size()]
-        long[] dailyHighs = new long[content.size()]
-        long[] dailyLows = new long[content.size()]
+        long[] dailyCloses = new long[newest200Entries.size()]
+        long[] dailyHighs = new long[newest200Entries.size()]
+        long[] dailyLows = new long[newest200Entries.size()]
         if (dailyCloses.length > 4) {
-            content.eachWithIndex { DailySecurityData entry, int i ->
-                dailyCloses[dailyCloses.length - (i + 1)] = entry.close
-                dailyHighs[dailyHighs.length - (i + 1)] = entry.high
-                dailyLows[dailyLows.length - (i + 1)] = entry.low
+            newest200Entries.eachWithIndex { DailySecurityData entry, int i ->
+                dailyCloses[i] = entry.close
+                dailyHighs[i] = entry.high
+                dailyLows[i] = entry.low
             }
 
             smas.keySet().each { movingAveragePeriod ->
@@ -159,7 +151,7 @@ class SimpleSecurityService implements SecurityService {
             }
         }
 
-        def metrics = new DailySecurityMetrics(date: dailySecurityDataDate,
+        def metrics = new DailySecurityMetrics(date: dailySecurityData.date,
               fiftyTwoWeekHigh: fiftyTwoWeekHigh, fiftyTwoWeekLow: fiftyTwoWeekLow,
               fiveDaySimpleMovingAverage: smas.get(5), tenDaySimpleMovingAverage: smas.get(10),
               twentyDaySimpleMovingAverage: smas.get(20), fiftyDaySimpleMovingAverage: smas.get(50),
@@ -227,6 +219,49 @@ class SimpleSecurityService implements SecurityService {
             save(data)
         }
         log.info("Inserted ${parsedData.size()} entities for security ${security.symbol}")
+    }
+
+    @Override
+    void recalculateDailyMetrics(BaseSecurity security) {
+        log.info("Recalculating daily metrics for security ${security.symbol}")
+
+        List<DailySecurityData> securityDatas = new ArrayList<>(dailySecurityDataDao.findBySecurity(security))
+        Collections.sort(securityDatas, new Comparator<DailySecurityData>() {
+            @Override
+            int compare(final DailySecurityData o1, final DailySecurityData o2) {
+                return o1.getDate().compareTo(o2.getDate())
+            }
+        })
+
+        log.info "Calculating metrics for ${securityDatas.size()} daily security entries."
+        List<DailySecurityMetrics> metrics = new ArrayList<>(securityDatas.size())
+        for (int i = 0; i < securityDatas.size(); i++) {
+            if ( i % 1000 == 0) {
+                log.info "  -- ${i}"
+            }
+
+            def dailySecurityData = securityDatas.get(i)
+
+            def cal = Calendar.getInstance()
+            cal.setTime(dailySecurityData.date)
+            cal.add(Calendar.WEEK_OF_YEAR, -52)
+            def fiftyTwoWeeksAgo = cal.getTime()
+
+            int startIndex = i
+            for (int j = startIndex; j > -1; j--) {
+                def earlier = securityDatas.get(j)
+                if (earlier.date.before(fiftyTwoWeeksAgo)) {
+                    break
+                }
+                startIndex = j
+            }
+
+            List<DailySecurityData> latest52WeeksOfEntries = securityDatas.subList(startIndex, i+1)
+
+            metrics.add(calculateDailyMetrics(dailySecurityData, latest52WeeksOfEntries))
+        }
+        dailySecurityMetricsDao.save(metrics)
+        log.info("Inserted ${metrics.size()} metrics entries for security ${security.symbol}")
     }
 
     @Override

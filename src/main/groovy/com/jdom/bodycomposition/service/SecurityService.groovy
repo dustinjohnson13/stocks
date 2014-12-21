@@ -13,6 +13,8 @@ interface SecurityService {
 
     void updateHistoryData(BaseSecurity security) throws FileNotFoundException
 
+    void recalculateDailyMetrics(BaseSecurity security)
+
     PortfolioValue portfolioValue(Portfolio portfolio, Date date)
 
     BaseSecurity findSecurityBySymbol(String symbol)
