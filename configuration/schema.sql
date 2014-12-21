@@ -44,7 +44,7 @@ CREATE TABLE `security_details` (
   `country` varchar(50) NOT NULL,
   `category_number` int(3) NOT NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `id_security_id_fk` FOREIGN KEY (`id`) REFERENCES `security` (`id`)
+  CONSTRAINT `id_security_id_fk` FOREIGN KEY (`id`) REFERENCES `security` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 DROP TABLE IF EXISTS `security_daily_data`;
@@ -82,8 +82,8 @@ CREATE TABLE `security_daily_metrics` (
   `fifty_day_exponential_moving_average`  int(10) unsigned,
   `hundred_day_exponential_moving_average`  int(10) unsigned,
   `two_hundred_day_exponential_moving_average` int(10) unsigned,
-  `macd` int(10) unsigned,
-  `macd_signal` int(10) unsigned,
+  `macd` int(10),
+  `macd_signal` int(10),
   `fast_stochastic_oscillator_k` int(10) unsigned,
   `fast_stochastic_oscillator_d` int(10) unsigned,
   `slow_stochastic_oscillator_k` int(10) unsigned,
@@ -97,8 +97,8 @@ CREATE TABLE `security_daily_metrics` (
   KEY `fifty_two_week_high` (`fifty_two_week_high`),
   KEY `fifty_two_week_low` (`fifty_two_week_low`),
   KEY `date` (`date`),
-  CONSTRAINT `security_daily_metrics_ibfk_1` FOREIGN KEY (`fifty_two_week_high`) REFERENCES `security_daily_data` (`id`),
-  CONSTRAINT `security_daily_metrics_ibfk_2` FOREIGN KEY (`fifty_two_week_low`) REFERENCES `security_daily_data` (`id`)
+  CONSTRAINT `security_daily_metrics_ibfk_1` FOREIGN KEY (`fifty_two_week_high`) REFERENCES `security_daily_data` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `security_daily_metrics_ibfk_2` FOREIGN KEY (`fifty_two_week_low`) REFERENCES `security_daily_data` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=36659080 DEFAULT CHARSET=latin1;
 
 --
