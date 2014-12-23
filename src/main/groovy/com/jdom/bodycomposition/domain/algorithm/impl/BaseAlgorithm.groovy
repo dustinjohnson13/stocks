@@ -60,7 +60,7 @@ abstract class BaseAlgorithm implements Algorithm {
 
             boolean submittedOrder = false
             int orderAttempt = 0;
-            while (!submittedOrder && orderAttempt < MAXIMUM_ORDER_SEARCHES_TO_TRY_PER_DAY && !dayEntriesMatchingBuyCriteria.isEmpty()) {
+            while (!submittedOrder && orderAttempt++ < MAXIMUM_ORDER_SEARCHES_TO_TRY_PER_DAY && !dayEntriesMatchingBuyCriteria.isEmpty()) {
 
                 DailySecurityData entry = dayEntriesMatchingBuyCriteria.get(random.nextInt(dayEntriesMatchingBuyCriteria.size()))
                 if (entry.high < toMoney('$5') || entry.volume < EXCLUSIVE_LOW_VOLUME_REQUIRED) {
@@ -79,8 +79,6 @@ abstract class BaseAlgorithm implements Algorithm {
                         println e.getMessage()
                     }
                 }
-
-                orderAttempt++
             }
         }
 
@@ -96,9 +94,14 @@ abstract class BaseAlgorithm implements Algorithm {
                 log.error "Could not find purchase transaction for ${entry.security}"
                 continue
             }
+            def metrics = dailyMetrics.find { it.fiftyTwoWeekHigh.security == position.security }
+            if (metrics == null) {
+                log.error "Could not find daily metrics for ${entry.security}"
+                continue
+            }
 
             if (portfolio.cash >= broker.commissionCost) {
-                Order sellOrder = checkForSellPosition(position, entry, purchase)
+                Order sellOrder = checkForSellPosition(position, entry, metrics, purchase)
                 def percentGain = MathUtil.percentChange(entry.close, purchase.price)
                 if (sellOrder != null) {
                     log.info "Bought ${entry.security} at ${purchase.price}, current price ${entry.close}, percent change: ${formatPercentage(percentGain)} (${percentGain}).  Selling successful trade!"
@@ -126,7 +129,7 @@ abstract class BaseAlgorithm implements Algorithm {
           final Broker broker, final PortfolioValue portfolioValue, final List<DailySecurityData> dailySecurityDatas,
           final List<DailySecurityMetrics> dailySecurityMetrics, final Date date)
 
-    protected abstract Order checkForSellPosition(final Position position, final DailySecurityData entry, final BuyTransaction purchase)
+    protected abstract Order checkForSellPosition(final Position position, final DailySecurityData entry, final DailySecurityMetrics metrics, final BuyTransaction purchase)
 
     static int sharesForPortfolioPercentage(
           final Broker broker, final PortfolioValue portfolioValue, final long price, final long percentage) {

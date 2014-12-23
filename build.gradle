@@ -30,6 +30,7 @@ ext {
     tomcatVersion = '7.0.11'
     hsqlVersion = '2.3.2'
     taLibVersion = '0.4.0'
+    guavaVersion = '18.0'
 
     libs = [
           database: [
@@ -90,6 +91,7 @@ dependencies {
     compile libs.logging
     compile libs.spring
     compile "com.tictactec:ta-lib:$taLibVersion"
+    compile "com.google.guava:guava:$guavaVersion"
 
     testCompile libs.spock
     testCompile "org.springframework:spring-test:$springVersion"

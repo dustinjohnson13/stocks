@@ -46,7 +46,7 @@ class BuyAt52WeekLowSellAtGivenPercentUpOrDown extends BaseAlgorithm {
 
     @Override
     protected Order checkForSellPosition(
-          final Position position, final DailySecurityData entry, final BuyTransaction purchase) {
+          final Position position, final DailySecurityData entry, final DailySecurityMetrics metrics, final BuyTransaction purchase) {
         def percentGain = MathUtil.percentChange(entry.close, purchase.price)
 
         if (percentGain > PERCENTAGE_PROFIT_OR_LOSS_TO_SELL_POSITION_AT) {

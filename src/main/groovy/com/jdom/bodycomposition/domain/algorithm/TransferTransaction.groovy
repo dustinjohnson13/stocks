@@ -45,14 +45,14 @@ abstract class TransferTransaction implements PortfolioTransaction {
             }
         }
 
-        if (logTransaction && log.isInfoEnabled()) {
+        if (logTransaction && log.isDebugEnabled()) {
             StringBuilder sb = new StringBuilder('\n').append(TimeUtil.dashString(date)).append(' ')
                   .append(getAction()).append(" ").append(security.exchange).append(':')
                   .append(security.symbol).append(" ").append(numberOfShares).append("@")
                   .append(MathUtil.formatMoney(price)).append(":\n")
                   sb.append("   From portfolio: ${portfolio}\n").append("   New portfolio: ${newPortfolio}")
 
-            log.info(sb.toString())
+            log.debug(sb.toString())
         }
 
         return newPortfolio

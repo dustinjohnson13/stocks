@@ -73,8 +73,10 @@ final class MarketEngines {
         void processDay(Date date) {
             currentDate = date
 
-            if (log.isInfoEnabled()) {
-                log.info "Market day [${date}] is being processed.  Open orders:\n${openOrders}"
+            if (log.isDebugEnabled()) {
+                log.debug "Market day [${date}] is being processed.  Open orders:\n${openOrders}"
+            } else if (log.isInfoEnabled()) {
+                log.debug "Market day [${date}] is being processed.  Open orders: ${openOrders.size()}"
             }
 
             Set<OrderRequestImpl> origList = new HashSet<>(openOrders)
