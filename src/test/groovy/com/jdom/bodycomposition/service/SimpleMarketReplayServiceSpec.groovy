@@ -58,7 +58,7 @@ class SimpleMarketReplayServiceSpec extends Specification {
         ]
 
         given: 'a portfolio of $200'
-        Portfolio initialPortfolio = new Portfolio(toMoney('$200'))
+        Portfolio initialPortfolio = Portfolio.newPortfolio(toMoney('$200'))
 
         and: 'purchasing/selling MSFT stock between 11/27/2003 and 07/16/2010'
         MarketReplay scenario = new MarketReplay(initialPortfolio: initialPortfolio,
@@ -99,21 +99,21 @@ class SimpleMarketReplayServiceSpec extends Specification {
         result.valueChangePercent == toPercentage('-17.29%')
 
         and: 'the dailyPortfolios have the correct attributes'
-        def afterFirstPurchasePosition = new Position(msft, 2)
+        def afterFirstPurchasePosition = Position.newPosition(msft, 2)
         def afterFirstPurchase = result.dailyPortfolios.find{ it.date == dateOfFirstPurchase }
         afterFirstPurchase != null
-        afterFirstPurchase == new PortfolioValue(new Portfolio(toMoney('$144.05'), [afterFirstPurchasePosition] as Set),
-                dateOfFirstPurchase, [new PositionValue(afterFirstPurchasePosition, dateOfFirstPurchase, toMoney('$25.71'))] as Set)
+        afterFirstPurchase == PortfolioValue.newPortfolioValue(Portfolio.newPortfolio(toMoney('$144.05'), [afterFirstPurchasePosition] as Set),
+                dateOfFirstPurchase, [PositionValue.newPositionValue(afterFirstPurchasePosition, dateOfFirstPurchase, toMoney('$25.71'))] as Set)
 
         def afterFirstSale = result.dailyPortfolios.find{ it.date == dateOfFirstSale }
         afterFirstSale != null
-        afterFirstSale == new PortfolioValue(new Portfolio(toMoney('$188.88'), [] as Set),
+        afterFirstSale == PortfolioValue.newPortfolioValue(Portfolio.newPortfolio(toMoney('$188.88'), [] as Set),
                 dateOfFirstSale, [] as Set)
 
-        def afterSixSharesPosition = new Position(msft, 6)
+        def afterSixSharesPosition = Position.newPosition(msft, 6)
         def afterSixShares = result.dailyPortfolios.find{ it.date == dateWithSixShares }
         afterSixShares != null
-        afterSixShares == new PortfolioValue(new Portfolio(toMoney('$21.03'), [afterSixSharesPosition] as Set),
-                dateWithSixShares, [new PositionValue(afterSixSharesPosition, dateWithSixShares, toMoney('$25.51'))] as Set)
+        afterSixShares == PortfolioValue.newPortfolioValue(Portfolio.newPortfolio(toMoney('$21.03'), [afterSixSharesPosition] as Set),
+                dateWithSixShares, [PositionValue.newPositionValue(afterSixSharesPosition, dateWithSixShares, toMoney('$25.51'))] as Set)
     }
 }

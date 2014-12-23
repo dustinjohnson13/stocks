@@ -13,7 +13,7 @@ class Portfolio implements Serializable {
 
     final Set<Position> positions = new HashSet<>()
 
-    Portfolio(long cash, Set<Position> initialShares = new HashSet<Position>()) {
+    private Portfolio(long cash, Set<Position> initialShares = new HashSet<Position>()) {
         this.cash = cash
         this.positions.addAll(initialShares)
     }
@@ -28,5 +28,9 @@ class Portfolio implements Serializable {
         StringBuilder sb = new StringBuilder("Cash: ").append(money).
                 append('  Shares: ').append(positions.collect { return it.security.symbol + ': ' + it.shares})
         return sb.toString()
+    }
+
+    static Portfolio newPortfolio(long cash, Set<Position> initialShares = new HashSet<Position>()) {
+        return new Portfolio(cash, initialShares)
     }
 }

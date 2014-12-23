@@ -41,7 +41,7 @@ public class HomePage extends WebPage {
    public HomePage(final PageParameters parameters) {
 
       MarketReplay marketReplay = new MarketReplay();
-      marketReplay.setInitialPortfolio(new Portfolio(500000L));
+      marketReplay.setInitialPortfolio(Portfolio.newPortfolio(500000L));
       marketReplay.setCommissionCost(495L);
       marketReplay.setStartDate(new Date(TimeUtil.currentTimeMillis() - TimeUtil.MILLIS_PER_YEAR));
       marketReplay.setEndDate(TimeUtil.newDate());

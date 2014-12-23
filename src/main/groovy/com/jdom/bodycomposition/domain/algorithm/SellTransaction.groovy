@@ -23,9 +23,9 @@ class SellTransaction extends TransferTransaction {
 
         def position = existing.positions.find { it.security == security }
         if (position == null) {
-            position = new Position(security, -numberOfShares)
+            position = Position.newPosition(security, -numberOfShares)
         } else {
-            position = new Position(security, position.shares - numberOfShares)
+            position = Position.newPosition(security, position.shares - numberOfShares)
         }
         if (position.shares != 0) {
             positions.add(position)
@@ -33,7 +33,7 @@ class SellTransaction extends TransferTransaction {
 
         long newCash = existing.cash + cashValue - commission
 
-        def newPortfolio = new Portfolio(newCash, positions)
+        def newPortfolio = Portfolio.newPortfolio(newCash, positions)
 
         return newPortfolio
     }

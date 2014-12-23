@@ -25,8 +25,8 @@ class BuyTransactionSpec extends Specification {
 
         where:
         portfolio                                                        | expectedPortfolio
-        new Portfolio(toMoney('$200'), [new Position(stock, 10)] as Set) | new Portfolio(toMoney('$95'), [new Position(stock, 20)] as Set)
-        new Portfolio(toMoney('$105'))                                   | new Portfolio(toMoney('$0'), [new Position(stock, 10)] as Set)
+        Portfolio.newPortfolio(toMoney('$200'), [Position.newPosition(stock, 10)] as Set) | Portfolio.newPortfolio(toMoney('$95'), [Position.newPosition(stock, 20)] as Set)
+        Portfolio.newPortfolio(toMoney('$105'))                                   | Portfolio.newPortfolio(toMoney('$0'), [Position.newPosition(stock, 10)] as Set)
     }
 
     @Unroll
@@ -41,9 +41,9 @@ class BuyTransactionSpec extends Specification {
 
         where:
         portfolio << [
-                new Portfolio(toMoney('$104'), [new Position(stock, 9)] as Set), // Not enough money
-                new Portfolio(toMoney('$50'), [new Position(stock, 1)] as Set), // Not enough money
-                new Portfolio(toMoney('$0'), [new Position(stock, 1)] as Set), // No money
+                Portfolio.newPortfolio(toMoney('$104'), [Position.newPosition(stock, 9)] as Set), // Not enough money
+                Portfolio.newPortfolio(toMoney('$50'), [Position.newPosition(stock, 1)] as Set), // Not enough money
+                Portfolio.newPortfolio(toMoney('$0'), [Position.newPosition(stock, 1)] as Set), // No money
         ]
     }
 }

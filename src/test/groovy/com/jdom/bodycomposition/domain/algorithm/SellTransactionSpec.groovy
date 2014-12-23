@@ -25,9 +25,9 @@ class SellTransactionSpec extends Specification {
 
         where:
         portfolio                                                        | expectedPortfolio
-        new Portfolio(toMoney('$200'), [new Position(stock, 11)] as Set) | new Portfolio(toMoney('$295'), [new Position(stock, 1)] as Set)
-        new Portfolio(toMoney('$200'), [new Position(stock, 10)] as Set) | new Portfolio(toMoney('$295'), [] as Set)
-        new Portfolio(toMoney('$200'), [new Position(stock, 10)] as Set) | new Portfolio(toMoney('$295'), [] as Set)
+        Portfolio.newPortfolio(toMoney('$200'), [Position.newPosition(stock, 11)] as Set) | Portfolio.newPortfolio(toMoney('$295'), [Position.newPosition(stock, 1)] as Set)
+        Portfolio.newPortfolio(toMoney('$200'), [Position.newPosition(stock, 10)] as Set) | Portfolio.newPortfolio(toMoney('$295'), [] as Set)
+        Portfolio.newPortfolio(toMoney('$200'), [Position.newPosition(stock, 10)] as Set) | Portfolio.newPortfolio(toMoney('$295'), [] as Set)
     }
 
     @Unroll
@@ -42,9 +42,9 @@ class SellTransactionSpec extends Specification {
 
         where:
         portfolio << [
-                new Portfolio(toMoney('$200'), [new Position(stock, 9)] as Set), // Too few positions
-                new Portfolio(toMoney('$200'), [new Position(stock, 1)] as Set), // Too few positions
-                new Portfolio(toMoney('$200'), [] as Set) // No positions
+                Portfolio.newPortfolio(toMoney('$200'), [Position.newPosition(stock, 9)] as Set), // Too few positions
+                Portfolio.newPortfolio(toMoney('$200'), [Position.newPosition(stock, 1)] as Set), // Too few positions
+                Portfolio.newPortfolio(toMoney('$200'), [] as Set) // No positions
         ]
     }
 }

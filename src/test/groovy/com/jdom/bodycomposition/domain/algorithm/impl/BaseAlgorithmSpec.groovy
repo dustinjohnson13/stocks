@@ -20,12 +20,12 @@ class BaseAlgorithmSpec extends Specification {
     @Unroll
     def 'should calculate correct number of shares for percentage of portfolio: #percentage'() {
 
-        final Portfolio portfolio = new Portfolio(toMoney('$200'))
+        final Portfolio portfolio = Portfolio.newPortfolio(toMoney('$200'))
         final Date date = new Date()
         final Set<PositionValue> positions
 
         PortfolioValue portfolioValue = new PortfolioValue(portfolio, date, [
-              new PositionValue(new Position(new Stock(id: 1L), 5), date, toMoney('$19.50'))] as Set)
+              PositionValue.newPositionValue(Position.newPosition(new Stock(id: 1L), 5), date, toMoney('$19.50'))] as Set)
 
         given: 'a portfolio is worth $297.50'
         assert portfolioValue.marketValue() == toMoney('$297.50')

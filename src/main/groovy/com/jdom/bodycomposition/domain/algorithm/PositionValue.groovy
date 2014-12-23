@@ -13,7 +13,7 @@ class PositionValue implements Serializable {
     final Date date
     final long price
 
-    PositionValue(Position position, Date date, long price) {
+    private PositionValue(Position position, Date date, long price) {
         this.position = position
         this.date = date
         this.price = price
@@ -29,5 +29,9 @@ class PositionValue implements Serializable {
 
     int getShares() {
         return position.shares
+    }
+
+    static PositionValue newPositionValue(Position position, Date date, long price) {
+        return new PositionValue(position, date, price)
     }
 }

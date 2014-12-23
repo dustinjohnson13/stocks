@@ -273,13 +273,13 @@ class SimpleSecurityService implements SecurityService {
                   position.security, new Date(0), date, latestUpToDate)
 
             if (page.hasContent()) {
-                positionValues.add(new PositionValue(position, date, page.getContent()[0].close))
+                positionValues.add(PositionValue.newPositionValue(position, date, page.getContent()[0].close))
             } else {
                 log.error(String.format("Unable to find daily security data to calculate the market " +
                       "value of security [%s] for date [%s]!", position.security.symbol, TimeUtil.dashString(date)))
             }
         }
-        return new PortfolioValue(portfolio, date, positionValues)
+        return PortfolioValue.newPortfolioValue(portfolio, date, positionValues)
     }
 
     @Override

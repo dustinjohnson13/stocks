@@ -14,7 +14,7 @@ class PortfolioValue implements Serializable {
     final Date date
     final Set<PositionValue> positions
 
-    PortfolioValue(final Portfolio portfolio, final Date date, final Set<PositionValue> positions) {
+    private PortfolioValue(final Portfolio portfolio, final Date date, final Set<PositionValue> positions) {
         this.portfolio = portfolio
         this.date = date
         this.positions = positions
@@ -38,5 +38,9 @@ class PortfolioValue implements Serializable {
         def originalValue = portfolio.marketValue()
 
         return MathUtil.percentChange(currentValue, originalValue)
+    }
+
+    static PortfolioValue newPortfolioValue(final Portfolio portfolio, final Date date, final Set<PositionValue> positions) {
+        return new PortfolioValue(portfolio, date, positions)
     }
 }

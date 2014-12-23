@@ -13,8 +13,12 @@ class Position implements Serializable {
 
     final int shares
 
-    Position(BaseSecurity security, int shares) {
+    private Position(BaseSecurity security, int shares) {
         this.security = security
         this.shares = shares
+    }
+
+    static Position newPosition(BaseSecurity security, int shares) {
+        return new Position(security, shares)
     }
 }

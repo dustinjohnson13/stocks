@@ -35,7 +35,7 @@ class MarketReplaySpec extends Specification {
         def endDateString = '2010-01-08'
         def endDate = dateFromDashString(endDateString)
 
-        Portfolio initialPortfolio = new Portfolio(20000l)
+        Portfolio initialPortfolio = Portfolio.newPortfolio(20000l)
         MarketEngine marketEngine = Mock()
         _ * marketEngine.getPortfolio() >> initialPortfolio
         _ * marketEngine.getTransactions() >> []
@@ -46,7 +46,7 @@ class MarketReplaySpec extends Specification {
 
         SecurityService securityService = Mock()
 
-        def portfolioValue = new PortfolioValue(initialPortfolio, startDate, [] as Set)
+        def portfolioValue = PortfolioValue.newPortfolioValue(initialPortfolio, startDate, [] as Set)
         _ * securityService.portfolioValue(_ as Portfolio, _ as Date) >> portfolioValue
 
         DailySecurityDataDao dailySecurityDataDao = Mock()

@@ -47,13 +47,13 @@ class SimpleSecurityServiceSpec extends Specification {
 
         given: 'a portfolio with two securities'
         def positions = new HashSet<Position>([
-              new Position(securities.find { it.symbol == 'MSFT' }, 2),
-              new Position(securities.find { it.symbol == 'EBF' }, 17)
+              Position.newPosition(securities.find { it.symbol == 'MSFT' }, 2),
+              Position.newPosition(securities.find { it.symbol == 'EBF' }, 17)
         ])
 
         and: 'an amount of cash'
         def cash = toMoney('$457.33')
-        Portfolio portfolio = new Portfolio(cash, positions)
+        Portfolio portfolio = Portfolio.newPortfolio(cash, positions)
 
         when: 'the service is queried for portfolio value on a specific day'
         long portfolioValue = service.portfolioValue(portfolio, date)?.marketValue()

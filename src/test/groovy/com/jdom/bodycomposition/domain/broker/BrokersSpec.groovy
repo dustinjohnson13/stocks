@@ -31,7 +31,7 @@ class BrokersSpec extends Specification {
     @Shared
     BaseSecurity fb = new Stock(id: 1L, symbol: 'FB', exchange: 'NYSE')
 
-    Portfolio portfolio = new Portfolio(toMoney('$200'))
+    Portfolio portfolio = Portfolio.newPortfolio(toMoney('$200'))
 
     Broker broker = Brokers.create(market, portfolio, toMoney('$5'))
 
@@ -105,7 +105,7 @@ class BrokersSpec extends Specification {
 
     @Unroll
     def 'should not be able to submit multiple pending orders that would result in #reason'() {
-        Portfolio portfolio = new Portfolio(toMoney('$200'), [new Position(msft, 10)] as Set)
+        Portfolio portfolio = Portfolio.newPortfolio(toMoney('$200'), [Position.newPosition(msft, 10)] as Set)
         Broker broker = Brokers.create(market, portfolio, toMoney('$5'))
 
         given: 'there are pending orders'
