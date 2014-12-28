@@ -43,15 +43,15 @@ final class MarketEngines {
         private final TreeSet<OrderRequestImpl> toCancel = []
         private final orderIdBrokerAssociations = [:]
         private final oneCancelOther = [:]
-        final DailySecurityDataDao dailySecurityDataDao
-        Date currentDate
+        private final DailySecurityDataDao dailySecurityDataDao
+        private Date currentDate
 
         private DailyDataDrivenMarketEngine(final DailySecurityDataDao dailySecurityDataDao) {
             this.dailySecurityDataDao = dailySecurityDataDao
         }
 
         @Override
-        OrderRequest submit(final Broker broker, final Order order) {
+        synchronized OrderRequest submit(final Broker broker, final Order order) {
 
             if (broker == null) {
                 throw new IllegalArgumentException('Broker must not be null!')
@@ -91,7 +91,7 @@ final class MarketEngines {
         }
 
         @Override
-        void processDay(Date date) {
+        synchronized void processDay(Date date, Map<Integer, DailySecurityData> dailySecurityDatas) {
             currentDate = date
 
             if (log.isDebugEnabled()) {
@@ -118,7 +118,7 @@ final class MarketEngines {
                         break;
                 }
 
-                def securityData = dailySecurityDataDao.findBySecurityAndDate(order.security, date)
+                def securityData = dailySecurityDatas.get(order.security.id)
                 if (securityData == null) {
                     if (log.isDebugEnabled()) {
                         log.debug "No security data to process order [${order.id}]."
@@ -219,7 +219,7 @@ final class MarketEngines {
             }
         }
 
-        void notifyBroker(OrderRequest processedOrder) {
+        private void notifyBroker(OrderRequest processedOrder) {
             if (log.isDebugEnabled()) {
                 log.debug "Notifying broker of processed order [${processedOrder.id}]."
             }
@@ -246,7 +246,7 @@ final class MarketEngines {
         }
 
         @Override
-        OrderRequest getOrder(final OrderRequest orderRequest) {
+        synchronized OrderRequest getOrder(final OrderRequest orderRequest) {
             def order = openOrders.find { it.id == orderRequest.id }
             if (order == null) {
                 order = processedOrders.find { it.id == orderRequest.id }

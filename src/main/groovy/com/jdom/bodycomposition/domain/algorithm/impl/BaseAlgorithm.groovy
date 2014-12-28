@@ -69,14 +69,15 @@ abstract class BaseAlgorithm implements Algorithm {
                 }
 
                 int sharesToBuy = BaseAlgorithm.sharesForPortfolioPercentage(broker, portfolioValue, entry.close, toPercentage('10%'))
+                long requiredCash = entry.close * sharesToBuy
 
-                if (sharesToBuy > 0) {
+                if (sharesToBuy > 0 && portfolioValue.cash > requiredCash) {
                     try {
                         log.info "Buying: ${sharesToBuy} shares of ${entry.security.symbol}"
-                        broker.submit(Orders.newBuyLimitOrder(sharesToBuy, entry.security, entry.low, Duration.DAY_ORDER))
+                        broker.submit(Orders.newBuyLimitOrder(sharesToBuy, entry.security, entry.close, Duration.DAY_ORDER))
                         submittedOrder = true
                     } catch (OrderRejectedException e) {
-                        println e.getMessage()
+                        log.error("Order rejected", e)
                     }
                 }
             }
@@ -114,7 +115,7 @@ abstract class BaseAlgorithm implements Algorithm {
                     try {
                         broker.submit(sellOrder)
                     } catch (OrderRejectedException e) {
-                        println e.getMessage()
+                        log.error("Order rejected", e)
                     }
                 }
             }

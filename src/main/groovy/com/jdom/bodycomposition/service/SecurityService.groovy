@@ -17,6 +17,8 @@ interface SecurityService {
 
     PortfolioValue portfolioValue(Portfolio portfolio, Date date)
 
+    PortfolioValue portfolioValue(Portfolio portfolio, Date date, Map<Integer, DailySecurityData> dailySecurityDatas)
+
     BaseSecurity findSecurityBySymbol(String symbol)
 
     DailySecurityData save(DailySecurityData dailySecurityData)

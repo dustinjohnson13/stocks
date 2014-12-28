@@ -34,8 +34,8 @@ final class Brokers {
         private final Market market
         private Portfolio portfolio
         final long commissionCost
-        final List<Transaction> transactions = []
-        final Map<String, PortfolioTransaction> pendingTransactions = [:]
+        private final List<Transaction> transactions = []
+        private final Map<String, PortfolioTransaction> pendingTransactions = [:]
 
 
         DefaultBroker(Market market, Portfolio portfolio, long commissionCost) {
@@ -44,8 +44,13 @@ final class Brokers {
             this.commissionCost = commissionCost
         }
 
-        public Portfolio getPortfolio() {
+        Portfolio getPortfolio() {
             return portfolio
+        }
+
+        @Override
+        List<PortfolioTransaction> getTransactions() {
+            return Collections.unmodifiableList(transactions)
         }
 
         @Override

@@ -14,8 +14,6 @@ import spock.lang.Specification
 
 import javax.transaction.Transactional
 
-import static com.jdom.bodycomposition.web.StocksTester.StocksFormTester
-
 @ActiveProfiles(SpringProfiles.TEST)
 @ContextConfiguration(classes = [StocksWebContext.class])
 @Transactional
@@ -37,7 +35,7 @@ class HomePageSpec extends Specification {
         tester = new StocksTester(application)
         page = tester.startPage(HomePage.class)
         tester.assertRenderedPage(HomePage.class)
-        page.scenarioModel.getObject().algorithm = new TestMsftAlgorithm()
+        page.scenarioModel.getObject().algorithmFactory = TestMsftAlgorithm.factory
     }
 
     def cleanup() {
@@ -81,23 +79,5 @@ class HomePageSpec extends Specification {
         def updateRequests = historyDownloader.updateRequests
         then: 'the ticker data was updated from the most recent date to today'
         updateRequests.isEmpty()
-    }
-
-    def 'should profile algorithm on button click'() {
-
-        StocksFormTester formTester = tester.newFormTester('algorithmProfilePanel:form')
-        formTester.setValue('startDate', '11/26/2003')
-        formTester.setValue('endDate', '07/16/2010')
-        formTester.setMoney('initialPortfolio.cash', '$200')
-        formTester.setMoney('commissionCost', '$4.95')
-
-        when: 'the profile algorithm button is clicked'
-        formTester.submit('profile')
-
-        then: 'the portfolio result was calculated'
-        tester.assertLabel('algorithmProfilePanel:results:resultPortfolio:resultCash', '$65.86')
-
-        and: 'the market value is displayed'
-        tester.assertLabel('algorithmProfilePanel:results:resultPortfolio:marketValue', '$165.42 (-17.29%)')
     }
 }

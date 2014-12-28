@@ -283,6 +283,22 @@ class SimpleSecurityService implements SecurityService {
     }
 
     @Override
+    PortfolioValue portfolioValue(final Portfolio portfolio, final Date date, final Map<Integer, DailySecurityData> dailySecurityDatas) {
+        Set<PositionValue> positionValues = new HashSet<>()
+        for (Position position : portfolio.positions) {
+
+            def dailySecurityData = dailySecurityDatas.get(position.security.id)
+            if (dailySecurityData) {
+                positionValues.add(PositionValue.newPositionValue(position, date, dailySecurityData.close))
+            } else {
+                log.error(String.format("Unable to find daily security data to calculate the market " +
+                      "value of security [%s] for date [%s]!", position.security.symbol, TimeUtil.dashString(date)))
+            }
+        }
+        return PortfolioValue.newPortfolioValue(portfolio, date, positionValues)
+    }
+
+    @Override
     BaseSecurity findSecurityBySymbol(final String symbol) {
         return stockDao.findBySymbol(symbol)
     }

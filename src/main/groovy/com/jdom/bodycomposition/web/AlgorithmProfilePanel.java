@@ -1,25 +1,20 @@
 package com.jdom.bodycomposition.web;
 
-import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction;
-import com.jdom.bodycomposition.domain.algorithm.PortfolioValue;
 import com.jdom.bodycomposition.domain.market.MarketReplay;
 import com.jdom.bodycomposition.service.MarketReplayService;
 import com.jdom.bodycomposition.service.SecurityService;
+import com.jdom.util.MathUtil;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.form.AjaxSubmitLink;
-import org.apache.wicket.extensions.markup.html.form.DateTextField;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.LoadableDetachableModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-
-import java.util.List;
 
 /**
  * Created by djohnson on 12/6/14.
@@ -39,13 +34,9 @@ public class AlgorithmProfilePanel extends Panel {
       Form<MarketReplay> form = new Form<>("form", new CompoundPropertyModel<MarketReplay>(algorithmScenarioModel));
       add(form);
 
-      DateTextField startDate = new DateTextField("startDate");
-      DateTextField endDate = new DateTextField("endDate");
       Component cash = new CurrencyTextField("initialPortfolio.cash");
       Component commission = new CurrencyTextField("commissionCost");
 
-      form.add(startDate);
-      form.add(endDate);
       form.add(cash);
       form.add(commission);
 
@@ -54,7 +45,6 @@ public class AlgorithmProfilePanel extends Panel {
          protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
 
             MarketReplay scenario = algorithmScenarioModel.getObject();
-            scenario.getTransactions().clear();
             MarketReplay result = marketReplayService.profileAlgorithm(scenario);
 
             target.add(AlgorithmProfilePanel.this);
@@ -62,18 +52,12 @@ public class AlgorithmProfilePanel extends Panel {
       };
       form.add(profileAlgorithm);
 
-      final IModel<List<? extends PortfolioTransaction>> transactions = new LoadableDetachableModel<List<? extends PortfolioTransaction>>() {
-         protected List<? extends PortfolioTransaction> load() {
-            return algorithmScenarioModel.getObject().getTransactions();
-         }
-      };
-
       WebMarkupContainer results = new WebMarkupContainer("results") {
          @Override
          protected void onConfigure() {
             super.onConfigure();
 
-            setVisible(algorithmScenarioModel.getObject().getResultPortfolio() != null);
+            setVisible(algorithmScenarioModel.getObject().getDuration() != 0);
          }
       };
       results.setOutputMarkupId(true);
@@ -86,36 +70,25 @@ public class AlgorithmProfilePanel extends Panel {
          }
       }));
 
-      final TransactionsPanel transactionsPanel = new TransactionsPanel("transactions", "Transactions", transactions);
-      transactionsPanel.setOutputMarkupId(true);
-      results.add(transactionsPanel);
+       results.add(new Label("averagePercentChange", new Model<String>() {
+           @Override
+           public String getObject() {
+               return MathUtil.formatPercentage(algorithmScenarioModel.getObject().getAveragePercentChange());
+           }
+       }));
 
-      final IModel<PortfolioValue> resultPortfolioModel = new LoadableDetachableModel<PortfolioValue>() {
-         protected PortfolioValue load() {
-            return algorithmScenarioModel.getObject().getResultPortfolio();
-         }
-      };
-      final IModel<PortfolioValue> initialPortfolioValueModel = new LoadableDetachableModel<PortfolioValue>() {
-         protected PortfolioValue load() {
-            final MarketReplay marketReplay = algorithmScenarioModel.getObject();
-            return marketReplay == null ? null : securityService.portfolioValue(marketReplay.getInitialPortfolio(),
-                    marketReplay.getStartDate());
-         }
-      };
-      final PortfolioValuePanel resultPortfolioPanel = new PortfolioValuePanel("resultPortfolio", resultPortfolioModel, initialPortfolioValueModel);
-      results.add(resultPortfolioPanel);
+       results.add(new Label("maximumPercentChange", new Model<String>() {
+           @Override
+           public String getObject() {
+               return MathUtil.formatPercentage(algorithmScenarioModel.getObject().getMaxPercentChange());
+           }
+       }));
 
-//      final IModel<List<? extends PortfolioValue>> portfolioCheckpoints = new LoadableDetachableModel<List<? extends PortfolioValue>>() {
-//         protected List<? extends PortfolioValue> load() {
-//            MarketReplay scenario = algorithmScenarioModel.getObject();
-//            final PortfolioValue resultPortfolio = scenario.getResultPortfolio();
-//
-//            if (resultPortfolio == null) {
-//               return Collections.emptyList();
-//            } else {
-//               return securityService.portfolioValueCheckpoints(scenario);
-//            }
-//         }
-//      };
+       results.add(new Label("minimumPercentChange", new Model<String>() {
+           @Override
+           public String getObject() {
+               return MathUtil.formatPercentage(algorithmScenarioModel.getObject().getMinPercentChange());
+           }
+       }));
    }
 }

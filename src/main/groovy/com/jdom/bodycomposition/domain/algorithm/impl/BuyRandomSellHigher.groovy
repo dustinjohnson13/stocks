@@ -2,10 +2,12 @@ package com.jdom.bodycomposition.domain.algorithm.impl
 
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.DailySecurityMetrics
+import com.jdom.bodycomposition.domain.algorithm.Algorithm
 import com.jdom.bodycomposition.domain.algorithm.BuyTransaction
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.algorithm.Position
 import com.jdom.bodycomposition.domain.broker.Broker
+import com.jdom.bodycomposition.domain.market.AlgorithmFactory
 import com.jdom.bodycomposition.domain.market.orders.Duration
 import com.jdom.bodycomposition.domain.market.orders.Order
 import com.jdom.bodycomposition.domain.market.orders.Orders
@@ -19,6 +21,13 @@ import static com.jdom.util.MathUtil.toPercentage
  */
 class BuyRandomSellHigher extends BaseAlgorithm {
     private static final Logger log = LoggerFactory.getLogger(BuyRandomSellHigher)
+
+    static final AlgorithmFactory factory = new AlgorithmFactory() {
+        @Override
+        Algorithm createInstance(final int identifier) {
+            return BuyRandomSellHigher.class.newInstance()
+        }
+    }
 
     static final long PERCENTAGE_PROFIT_OR_LOSS_TO_SELL_POSITION_AT = toPercentage('7%')
 

@@ -1,5 +1,4 @@
 package com.jdom.bodycomposition.domain.market
-
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.broker.Broker
 import com.jdom.bodycomposition.domain.market.orders.Duration
@@ -20,7 +19,6 @@ import spock.lang.Unroll
 import javax.transaction.Transactional
 
 import static com.jdom.util.TimeUtil.dateFromDashString
-
 /**
  * Created by djohnson on 12/10/14.
  */
@@ -46,12 +44,16 @@ class MarketEnginesSpec extends Specification {
 
     def sundayNonMarketDay = dateFromDashString('2013-12-01')
     def mondayMarketDay = dateFromDashString('2013-12-02')
+    def mondayData
 
     def setup() {
         fb = securityDao.findBySymbol('FB')
         msft = securityDao.findBySymbol('MSFT')
         market = MarketEngines.create(dailySecurityDataDao)
-        market.processDay(sundayNonMarketDay)
+
+        market.processDay(sundayNonMarketDay, MarketReplay.createMapOfDailySecurityDataBySecurityId(dailySecurityDataDao.findByDate(sundayNonMarketDay)))
+
+        mondayData = MarketReplay.createMapOfDailySecurityDataBySecurityId(dailySecurityDataDao.findByDate(mondayMarketDay))
     }
 
     @Unroll
@@ -67,7 +69,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         when: 'the market processes the next day'
-        market.processDay(mondayMarketDay)
+        market.processDay(mondayMarketDay, mondayData)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is processed'
@@ -98,7 +100,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         when: 'the market processes the next day'
-        market.processDay(mondayMarketDay)
+        market.processDay(mondayMarketDay, mondayData)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is processed'
@@ -141,7 +143,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         when: 'the market processes the next day'
-        market.processDay(mondayMarketDay)
+        market.processDay(mondayMarketDay, mondayData)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is not processed'
@@ -180,15 +182,18 @@ class MarketEnginesSpec extends Specification {
 
         then: 'the order is left open for one year'
         364.times {
+            def data = MarketReplay.createMapOfDailySecurityDataBySecurityId(dailySecurityDataDao.findByDate(sundayNonMarketDay))
             sundayNonMarketDay = TimeUtil.oneDayLater(sundayNonMarketDay)
-            market.processDay(sundayNonMarketDay)
+            market.processDay(sundayNonMarketDay, data)
 
             def processedOrder = market.getOrder(submittedOrder)
             assert processedOrder.status == OrderStatus.OPEN
         }
 
         then: 'the next day the order is cancelled'
-        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
+        def nextDate = TimeUtil.oneDayLater(sundayNonMarketDay)
+        def data = MarketReplay.createMapOfDailySecurityDataBySecurityId(dailySecurityDataDao.findByDate(nextDate))
+        market.processDay(nextDate, data)
         def processedOrder = market.getOrder(submittedOrder)
         processedOrder.status == OrderStatus.CANCELLED
 
@@ -215,7 +220,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         when: 'the market processes the next day'
-        market.processDay(mondayMarketDay)
+        market.processDay(mondayMarketDay, mondayData)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is not processed'
@@ -255,14 +260,17 @@ class MarketEnginesSpec extends Specification {
         then: 'the order is left open for one year'
         364.times {
             sundayNonMarketDay = TimeUtil.oneDayLater(sundayNonMarketDay)
-            market.processDay(sundayNonMarketDay)
+            def data = MarketReplay.createMapOfDailySecurityDataBySecurityId(dailySecurityDataDao.findByDate(sundayNonMarketDay))
+            market.processDay(sundayNonMarketDay, data)
 
             def processedOrder = market.getOrder(submittedOrder)
             assert processedOrder.status == OrderStatus.OPEN
         }
 
         then: 'the next day the order is cancelled'
-        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
+        def nextDate = TimeUtil.oneDayLater(sundayNonMarketDay)
+        def data = MarketReplay.createMapOfDailySecurityDataBySecurityId(dailySecurityDataDao.findByDate(nextDate))
+        market.processDay(nextDate, data)
         def processedOrder = market.getOrder(submittedOrder)
         processedOrder.status == OrderStatus.CANCELLED
 
@@ -291,14 +299,17 @@ class MarketEnginesSpec extends Specification {
         then: 'the order is left open for one year'
         364.times {
             sundayNonMarketDay = TimeUtil.oneDayLater(sundayNonMarketDay)
-            market.processDay(sundayNonMarketDay)
+            def data = MarketReplay.createMapOfDailySecurityDataBySecurityId(dailySecurityDataDao.findByDate(sundayNonMarketDay))
+            market.processDay(sundayNonMarketDay, data)
 
             def processedOrder = market.getOrder(submittedOrder)
             assert processedOrder.status == OrderStatus.OPEN
         }
 
         then: 'the next day the order is cancelled'
-        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
+        def nextDate = TimeUtil.oneDayLater(sundayNonMarketDay)
+        def data = MarketReplay.createMapOfDailySecurityDataBySecurityId(dailySecurityDataDao.findByDate(nextDate))
+        market.processDay(nextDate, data)
         def processedOrder = market.getOrder(submittedOrder)
         processedOrder.status == OrderStatus.CANCELLED
 
@@ -325,7 +336,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder.status == OrderStatus.OPEN
 
         when: 'the market processes the next day'
-        market.processDay(mondayMarketDay)
+        market.processDay(mondayMarketDay, mondayData)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is not processed'
@@ -365,14 +376,18 @@ class MarketEnginesSpec extends Specification {
         then: 'the order is left open for one year'
         364.times {
             sundayNonMarketDay = TimeUtil.oneDayLater(sundayNonMarketDay)
-            market.processDay(sundayNonMarketDay)
+            def data = MarketReplay.createMapOfDailySecurityDataBySecurityId(dailySecurityDataDao.findByDate(sundayNonMarketDay))
+
+            market.processDay(sundayNonMarketDay, data)
 
             def processedOrder = market.getOrder(submittedOrder)
             assert processedOrder.status == OrderStatus.OPEN
         }
 
         then: 'the next day the order is cancelled'
-        market.processDay(TimeUtil.oneDayLater(sundayNonMarketDay))
+        def nextDate = TimeUtil.oneDayLater(sundayNonMarketDay)
+        def data = MarketReplay.createMapOfDailySecurityDataBySecurityId(dailySecurityDataDao.findByDate(nextDate))
+        market.processDay(nextDate, data)
         def processedOrder = market.getOrder(submittedOrder)
         processedOrder.status == OrderStatus.CANCELLED
 
@@ -405,7 +420,7 @@ class MarketEnginesSpec extends Specification {
         def secondOrderRequest = market.submit(broker, secondOrder)
 
         when: 'the market day is processed'
-        market.processDay(mondayMarketDay)
+        market.processDay(mondayMarketDay, mondayData)
 
         then: 'both orders should have been filled'
         1 * broker.orderFilled(firstOrderRequest)
@@ -429,7 +444,7 @@ class MarketEnginesSpec extends Specification {
         submittedOrder = market.cancel(submittedOrder)
 
         and: 'the market processes the next day'
-        market.processDay(mondayMarketDay)
+        market.processDay(mondayMarketDay, mondayData)
 
         def processedOrder = market.getOrder(submittedOrder)
         then: 'the order is cancelled'
@@ -471,7 +486,7 @@ class MarketEnginesSpec extends Specification {
         List<OrderRequest> oco = market.submit(broker, Orders.newOneCancelsOtherOrder(firstOrder, secondOrder))
 
         when: 'the market day is processed'
-        market.processDay(mondayMarketDay)
+        market.processDay(mondayMarketDay, mondayData)
 
         then: 'the first order should have been filled and the second order should have been cancelled'
         1 * broker.orderFilled({ it.id == oco[expectedFilledIdx].id })
@@ -498,7 +513,7 @@ class MarketEnginesSpec extends Specification {
         List<OrderRequest> oco = market.submit(broker, Orders.newOneCancelsOtherOrder(firstOrder, secondOrder))
 
         when: 'the market day is processed'
-        market.processDay(mondayMarketDay)
+        market.processDay(mondayMarketDay, mondayData)
 
         then: 'one order should have been filled and the other order should have been cancelled'
         1 * broker.orderFilled(_ as OrderRequest)

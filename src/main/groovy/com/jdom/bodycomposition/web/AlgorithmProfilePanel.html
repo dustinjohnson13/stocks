@@ -3,14 +3,6 @@
     <div id="formEntry">
         <form wicket:id="form" id="form">
             <div>
-                <label for="startDate">Start Date:</label>
-                <input wicket:id="startDate" name="startDate" type="text">
-            </div>
-            <div>
-                <label for="endDate">End Date:</label>
-                <input wicket:id="endDate" name="endDate" type="text">
-            </div>
-            <div>
                 <label for="cash">Cash:</label>
                 <input wicket:id="initialPortfolio.cash" name="cash" type="text">
             </div>
@@ -29,17 +21,25 @@
         </div>
         <br/>
 
-        <div wicket:id="transactions" id="transactions"></div>
+        <div>
+            <strong><label for="averagePercentChange">Average Percent Change:</label></strong>
+            <label wicket:id="averagePercentChange" name="averagePercentChange"/>
+        </div>
+        <br/>
+
+        <div>
+            <strong><label for="minimumPercentChange">Minimum Percent Change:</label></strong>
+            <label wicket:id="minimumPercentChange" name="minimumPercentChange"/>
+        </div>
+        <br/>
+
+        <div>
+            <strong><label for="maximumPercentChange">Maximum Percent Change:</label></strong>
+            <label wicket:id="maximumPercentChange" name="maximumPercentChange"/>
+        </div>
+        <br/>
 
         <br/>
         <br/>
-
-        <div wicket:id="resultPortfolio" id="resultPortfolio" />
-
-        <br/>
-        <br/>
-
-        <!--<strong>Portfolio Checkpoints</strong>-->
-        <!--<div wicket:id="portfolioCheckpoints" id="portfolioCheckpoints"></div>-->
     </div>
 </wicket:panel>

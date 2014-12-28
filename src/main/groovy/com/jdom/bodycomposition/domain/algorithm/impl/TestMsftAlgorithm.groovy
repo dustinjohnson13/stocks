@@ -6,6 +6,7 @@ import com.jdom.bodycomposition.domain.DailySecurityMetrics
 import com.jdom.bodycomposition.domain.algorithm.Algorithm
 import com.jdom.bodycomposition.domain.algorithm.PortfolioValue
 import com.jdom.bodycomposition.domain.broker.Broker
+import com.jdom.bodycomposition.domain.market.AlgorithmFactory
 import com.jdom.bodycomposition.domain.market.orders.Duration
 import com.jdom.bodycomposition.domain.market.orders.Orders
 import com.jdom.util.TimeUtil
@@ -14,6 +15,13 @@ import com.jdom.util.TimeUtil
  * Created by djohnson on 12/6/14.
  */
 class TestMsftAlgorithm implements Algorithm {
+
+    static final AlgorithmFactory factory = new AlgorithmFactory() {
+        @Override
+        Algorithm createInstance(final int identifier) {
+            return new TestMsftAlgorithm()
+        }
+    }
 
     def purchaseDates = ['2003-11-26', '2005-05-17', '2010-07-13', '2010-07-14']
     def sellDates = ['2004-03-17', '2010-07-15', '2011-09-29']

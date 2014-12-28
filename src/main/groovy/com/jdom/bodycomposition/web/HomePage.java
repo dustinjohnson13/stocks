@@ -2,11 +2,9 @@ package com.jdom.bodycomposition.web;
 
 import com.jdom.bodycomposition.domain.Stock;
 import com.jdom.bodycomposition.domain.algorithm.Portfolio;
-import com.jdom.bodycomposition.domain.algorithm.impl.BuyRandomSellHigher;
 import com.jdom.bodycomposition.domain.market.MarketReplay;
 import com.jdom.bodycomposition.service.DailySecurityDataDao;
 import com.jdom.bodycomposition.service.SecurityService;
-import com.jdom.util.TimeUtil;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.markup.html.WebPage;
@@ -16,7 +14,6 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.slf4j.Logger;
 
-import java.util.Date;
 import java.util.List;
 
 public class HomePage extends WebPage {
@@ -43,9 +40,6 @@ public class HomePage extends WebPage {
       MarketReplay marketReplay = new MarketReplay();
       marketReplay.setInitialPortfolio(Portfolio.newPortfolio(500000L));
       marketReplay.setCommissionCost(495L);
-      marketReplay.setStartDate(new Date(TimeUtil.currentTimeMillis() - TimeUtil.MILLIS_PER_YEAR));
-      marketReplay.setEndDate(TimeUtil.newDate());
-      marketReplay.setAlgorithm(new BuyRandomSellHigher());
       scenarioModel.setObject(marketReplay);
 
       final AjaxLink<Void> updateSecurityDailyData = new AjaxLink<Void>("updateSecurityDailyData") {

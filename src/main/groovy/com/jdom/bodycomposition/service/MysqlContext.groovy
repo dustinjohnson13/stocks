@@ -18,6 +18,9 @@ class MysqlContext {
         dataSource.setUrl("jdbc:mysql://localhost:3306/stocks");
         dataSource.setUsername("root");
         dataSource.setPassword("");
+        dataSource.setInitialSize(5)
+        dataSource.setMaxActive(8)
+        dataSource.setRemoveAbandoned(true)
 
         return dataSource;
     }
