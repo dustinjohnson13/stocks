@@ -1,4 +1,5 @@
 package com.jdom.bodycomposition.domain.market
+
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.DailySecurityData
 import com.jdom.bodycomposition.domain.broker.Broker
@@ -8,6 +9,7 @@ import com.jdom.bodycomposition.domain.market.orders.BuyStopOrder
 import com.jdom.bodycomposition.domain.market.orders.Duration
 import com.jdom.bodycomposition.domain.market.orders.LimitOrder
 import com.jdom.bodycomposition.domain.market.orders.MarketOrder
+import com.jdom.bodycomposition.domain.market.orders.OneCancelsOther
 import com.jdom.bodycomposition.domain.market.orders.Order
 import com.jdom.bodycomposition.domain.market.orders.SellLimitOrder
 import com.jdom.bodycomposition.domain.market.orders.SellStopLimitOrder
@@ -20,6 +22,7 @@ import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
 /**
  * Created by djohnson on 12/10/14.
  */
@@ -37,7 +40,9 @@ final class MarketEngines {
     private static class DailyDataDrivenMarketEngine implements MarketEngine {
         private final TreeSet<OrderRequestImpl> openOrders = []
         private final TreeSet<OrderRequestImpl> processedOrders = []
+        private final TreeSet<OrderRequestImpl> toCancel = []
         private final orderIdBrokerAssociations = [:]
+        private final oneCancelOther = [:]
         final DailySecurityDataDao dailySecurityDataDao
         Date currentDate
 
@@ -70,16 +75,33 @@ final class MarketEngines {
         }
 
         @Override
+        List<OrderRequest> submit(final Broker broker, final OneCancelsOther oco) {
+            List<OrderRequest> orderRequests = new ArrayList<>(2)
+
+            def firstOrderRequest = submit(broker, oco.firstOrder)
+            def secondOrderRequest = submit(broker, oco.secondOrder)
+
+            orderRequests.add(firstOrderRequest)
+            orderRequests.add(secondOrderRequest)
+
+            oneCancelOther[firstOrderRequest] = secondOrderRequest
+            oneCancelOther[secondOrderRequest] = firstOrderRequest
+
+            return orderRequests
+        }
+
+        @Override
         void processDay(Date date) {
             currentDate = date
 
             if (log.isDebugEnabled()) {
                 log.debug "Market day [${date}] is being processed.  Open orders:\n${openOrders}"
             } else if (log.isInfoEnabled()) {
-                log.debug "Market day [${date}] is being processed.  Open orders: ${openOrders.size()}"
+                log.info "Market day [${date}] is being processed.  Open orders: ${openOrders.size()}"
             }
 
             Set<OrderRequestImpl> origList = new HashSet<>(openOrders)
+            Set<OrderRequestImpl> ordersProcessedToday = new HashSet<>()
             openOrders.clear()
 
             boolean anySecuritiesProcessed = false
@@ -107,32 +129,39 @@ final class MarketEngines {
                 }
 
                 def processedOrder = order
-                switch (order.order) {
-                    case StopLimitOrder:
-                        if (log.isDebugEnabled()) {
-                            log.debug "Processing stop limit order [${order.id}]."
-                        }
-                        processedOrder = processStopLimitOrder(order, order.order, securityData)
-                        break;
-                    case LimitOrder:
-                        if (log.isDebugEnabled()) {
-                            log.debug "Processing limit order [${order.id}]."
-                        }
-                        processedOrder = processLimitOrder(order, order.order, securityData)
-                        break;
-                    case StopOrder:
-                        if (log.isDebugEnabled()) {
-                            log.debug "Processing stop order [${order.id}]."
-                        }
-                        processedOrder = processStopOrder(order, order.order, securityData)
-                        break;
-                    case MarketOrder:
-                        if (log.isDebugEnabled()) {
-                            log.debug "Processing market order [${order.id}]."
-                        }
-                        MarketOrder marketOrder = (MarketOrder) order.order
-                        processedOrder = new OrderRequestImpl(order, OrderStatus.EXECUTED, currentDate, securityData.open)
-                        break;
+                if (toCancel.remove(order)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug "Cancellation was requested for order [${order.id}]."
+                    }
+                    processedOrder = new OrderRequestImpl(order, OrderStatus.CANCELLED, currentDate)
+                } else {
+                    switch (order.order) {
+                        case StopLimitOrder:
+                            if (log.isDebugEnabled()) {
+                                log.debug "Processing stop limit order [${order.id}]."
+                            }
+                            processedOrder = processStopLimitOrder(order, order.order, securityData)
+                            break;
+                        case LimitOrder:
+                            if (log.isDebugEnabled()) {
+                                log.debug "Processing limit order [${order.id}]."
+                            }
+                            processedOrder = processLimitOrder(order, order.order, securityData)
+                            break;
+                        case StopOrder:
+                            if (log.isDebugEnabled()) {
+                                log.debug "Processing stop order [${order.id}]."
+                            }
+                            processedOrder = processStopOrder(order, order.order, securityData)
+                            break;
+                        case MarketOrder:
+                            if (log.isDebugEnabled()) {
+                                log.debug "Processing market order [${order.id}]."
+                            }
+                            MarketOrder marketOrder = (MarketOrder) order.order
+                            processedOrder = new OrderRequestImpl(order, OrderStatus.EXECUTED, currentDate, securityData.open)
+                            break;
+                    }
                 }
 
                 if (log.isDebugEnabled()) {
@@ -143,8 +172,27 @@ final class MarketEngines {
                     if (log.isDebugEnabled()) {
                         log.debug "Added [${processedOrder.id}] to processed orders."
                     }
-                    processedOrders.add(processedOrder)
-                    notifyBroker(processedOrder)
+                    ordersProcessedToday.add(processedOrder)
+
+                    if (processedOrder.status == OrderStatus.EXECUTED) {
+                        def associatedOrder = oneCancelOther.remove(processedOrder)
+                        if (associatedOrder) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Cancelling one cancels other order [${associatedOrder.id}] associated to order [${processedOrder.id}]")
+                            }
+                            // The associated order could either have been attempted for execution today, or still pending
+                            if (openOrders.contains(associatedOrder)) {
+                                assert openOrders.remove(associatedOrder)
+                                ordersProcessedToday.add(new OrderRequestImpl(associatedOrder, OrderStatus.CANCELLED, currentDate))
+                            } else {
+                                cancelOrder(associatedOrder, origList)
+                            }
+
+                            assert oneCancelOther.remove(associatedOrder)
+                        } else if (log.isDebugEnabled()) {
+                            log.debug("Did not find a one cancels other order associated to order [${processedOrder.id}]")
+                        }
+                    }
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug "Added [${processedOrder.id}] back to open orders."
@@ -159,6 +207,11 @@ final class MarketEngines {
                     log.debug "No securities processed, adding all orders to open orders."
                 }
                 openOrders.addAll(origList)
+            } else {
+                for (OrderRequest processedOrder : ordersProcessedToday) {
+                    processedOrders.add(processedOrder)
+                    notifyBroker(processedOrder)
+                }
             }
 
             if (log.isDebugEnabled()) {
@@ -199,6 +252,21 @@ final class MarketEngines {
                 order = processedOrders.find { it.id == orderRequest.id }
             }
             return order
+        }
+
+        @Override
+        OrderRequest cancel(final OrderRequest orderRequest) {
+            return cancelOrder(orderRequest, openOrders)
+        }
+
+        private OrderRequest cancelOrder(final OrderRequest orderRequest, Set<OrderRequest> openOrderSet) {
+            def order = openOrderSet.find { it.id == orderRequest.id }
+            assert order
+
+            def cancelled = new OrderRequestImpl(order, OrderStatus.CANCELLED, currentDate)
+            toCancel.add(cancelled)
+
+            return cancelled
         }
 
         OrderRequestImpl processStopLimitOrder(OrderRequestImpl order, BuyStopLimitOrder limitOrder, DailySecurityData securityData) {

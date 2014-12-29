@@ -412,4 +412,101 @@ class MarketEnginesSpec extends Specification {
         1 * broker.orderFilled(secondOrderRequest)
     }
 
+    @Unroll
+    def 'should cancel open order if requested'() {
+
+        def order = ('buy' == type) ? Orders.newBuyLimitOrder(10, msft, limitPrice, duration) :
+              Orders.newSellLimitOrder(10, msft, limitPrice, duration)
+
+        given: 'a #type limit order submitted before day start'
+        def submittedOrder = market.submit(broker, order)
+
+        and: 'the order was submitted successfully'
+        submittedOrder.id != null
+        submittedOrder.status == OrderStatus.OPEN
+
+        when: 'the order is cancelled'
+        submittedOrder = market.cancel(submittedOrder)
+
+        and: 'the market processes the next day'
+        market.processDay(mondayMarketDay)
+
+        def processedOrder = market.getOrder(submittedOrder)
+        then: 'the order is cancelled'
+        processedOrder
+        processedOrder.status == OrderStatus.CANCELLED
+
+        and: 'the order was not executed'
+        processedOrder.executionPrice != order.price
+
+        and: 'the broker was notified of cancellation'
+        broker.orderCancelled(processedOrder)
+
+        where:
+        type   | limitPrice | duration
+        'buy'  | 3806       | Duration.GTC // Low price exactly
+        'buy'  | 3841       | Duration.GTC // In-between price
+        'buy'  | 3878       | Duration.GTC // High price exactly
+        'sell' | 3806       | Duration.GTC // Low price exactly
+        'sell' | 3841       | Duration.GTC // In-between price
+        'sell' | 3878       | Duration.GTC // High price exactly
+        'buy'  | 3806       | Duration.DAY_ORDER // Low price exactly
+        'buy'  | 3841       | Duration.DAY_ORDER // In-between price
+        'buy'  | 3878       | Duration.DAY_ORDER // High price exactly
+        'sell' | 3806       | Duration.DAY_ORDER // Low price exactly
+        'sell' | 3841       | Duration.DAY_ORDER // In-between price
+        'sell' | 3878       | Duration.DAY_ORDER // High price exactly
+    }
+
+    @Unroll
+    def 'should cancel the opposing order in a one cancels other if one fills'() {
+
+        def security = (firstOrderSymbol == 'msft') ? msft : fb
+        def security2 = (security == msft) ? fb : msft
+
+        def firstOrder = Orders.newBuyLimitOrder(10, security, firstLimitPrice, Duration.GTC)
+        def secondOrder = Orders.newBuyLimitOrder(10, security2, secondLimitPrice, Duration.GTC)
+
+        given: 'a one cancels other order is submitted'
+        List<OrderRequest> oco = market.submit(broker, Orders.newOneCancelsOtherOrder(firstOrder, secondOrder))
+
+        when: 'the market day is processed'
+        market.processDay(mondayMarketDay)
+
+        then: 'the first order should have been filled and the second order should have been cancelled'
+        1 * broker.orderFilled({ it.id == oco[expectedFilledIdx].id })
+        1 * broker.orderCancelled({ it.id == oco[expectedCancelledIdx].id })
+
+        where:
+        firstOrderSymbol | secondOrderSymbol | firstLimitPrice | secondLimitPrice | expectedFilledIdx | expectedCancelledIdx
+        'msft'           | 'fb'              | 0L              | 1000000L         | 1                 | 0         // Second order has fillable criteria
+        'fb'             | 'msft'            | 0L              | 1000000L         | 1                 | 0         // Second order has fillable criteria
+        'msft'           | 'fb'              | 1000000L        | 0L               | 0                 | 1         // First order has fillable criteria
+        'fb'             | 'msft'            | 1000000L        | 0L               | 0                 | 1         // First order has fillable criteria
+    }
+
+    @Unroll
+    def 'should cancel the opposing order in a one cancels other if one fills: either order can execute'() {
+
+        def security = (firstOrderSymbol == 'msft') ? msft : fb
+        def security2 = (security == msft) ? fb : msft
+
+        def firstOrder = Orders.newBuyLimitOrder(10, security, firstLimitPrice, Duration.GTC)
+        def secondOrder = Orders.newBuyLimitOrder(10, security2, secondLimitPrice, Duration.GTC)
+
+        given: 'a one cancels other order is submitted'
+        List<OrderRequest> oco = market.submit(broker, Orders.newOneCancelsOtherOrder(firstOrder, secondOrder))
+
+        when: 'the market day is processed'
+        market.processDay(mondayMarketDay)
+
+        then: 'one order should have been filled and the other order should have been cancelled'
+        1 * broker.orderFilled(_ as OrderRequest)
+        1 * broker.orderCancelled(_ as OrderRequest)
+
+        where:
+        firstOrderSymbol | secondOrderSymbol | firstLimitPrice | secondLimitPrice | expectedFilledIdx | expectedCancelledIdx
+        'msft'           | 'fb'              | 1000000L        | 1000000L         | 0                 | 1         // Both orders have fillable criteria
+        'fb'             | 'msft'            | 1000000L        | 1000000L         | 0                 | 1         // Both orders have fillable criteria
+    }
 }

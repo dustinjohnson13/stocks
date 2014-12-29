@@ -62,6 +62,10 @@ final class Orders {
         return new SellMarketOnCloseOrderImpl(shares, security, Qualifier.NONE)
     }
 
+    static OneCancelsOther newOneCancelsOtherOrder(Order firstOrder, Order secondOrder) {
+        return new OneCancelsOtherImpl(firstOrder, secondOrder)
+    }
+
     @ToString(includePackage = false)
     private static class BaseOrder implements Order {
         final int shares
@@ -203,6 +207,16 @@ final class Orders {
     private static class SellMarketOnCloseOrderImpl extends BaseMarketOrder implements SellMarketOnCloseOrder {
         private SellMarketOnCloseOrderImpl(int shares, BaseSecurity security, Qualifier qualifier) {
             super(shares, security, qualifier)
+        }
+    }
+
+    @ToString(includePackage = false)
+    private static class OneCancelsOtherImpl implements OneCancelsOther {
+        final Order firstOrder, secondOrder
+
+        OneCancelsOtherImpl(Order firstOrder, Order secondOrder) {
+            this.firstOrder = firstOrder
+            this.secondOrder = secondOrder
         }
     }
 }

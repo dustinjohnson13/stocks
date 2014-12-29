@@ -7,6 +7,7 @@ import com.jdom.bodycomposition.domain.algorithm.TransferTransaction
 import com.jdom.bodycomposition.domain.market.Market
 import com.jdom.bodycomposition.domain.market.OrderRequest
 import com.jdom.bodycomposition.domain.market.orders.BuyLimitOrder
+import com.jdom.bodycomposition.domain.market.orders.OneCancelsOther
 import com.jdom.bodycomposition.domain.market.orders.Order
 import com.jdom.bodycomposition.domain.market.orders.OrderRejectedException
 import com.jdom.bodycomposition.domain.market.orders.SellLimitOrder
@@ -78,8 +79,18 @@ final class Brokers {
         }
 
         @Override
+        List<OrderRequest> submit(final OneCancelsOther oco) {
+            return market.submit(this, oco)
+        }
+
+        @Override
         OrderRequest getOrder(final OrderRequest orderRequest) {
             return market.getOrder(orderRequest)
+        }
+
+        @Override
+        OrderRequest cancel(final OrderRequest orderRequest) {
+            return market.cancel(orderRequest)
         }
 
         BuyTransaction createTransaction(BuyLimitOrder limitOrder) {

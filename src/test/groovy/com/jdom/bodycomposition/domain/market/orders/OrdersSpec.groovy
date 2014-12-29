@@ -89,4 +89,18 @@ class OrdersSpec extends Specification {
         'buy'  | Orders.newBuyMarketOnCloseOrder(10, security)  | BuyMarketOnCloseOrder
         'sell' | Orders.newSellMarketOnCloseOrder(10, security) | SellMarketOnCloseOrder
     }
+
+    @Unroll
+    def 'should be able to create one cancel other orders'() {
+
+        expect: 'it has the correct attributes'
+        OneCancelsOther oco = Orders.newOneCancelsOtherOrder(firstOrder, secondOrder)
+        oco.firstOrder.is(firstOrder)
+        oco.secondOrder.is(secondOrder)
+
+        where:
+        firstOrder                                     | secondOrder
+        Orders.newBuyMarketOnCloseOrder(10, security)  | Orders.newSellMarketOnCloseOrder(10, security)
+        Orders.newSellMarketOnCloseOrder(10, security) | Orders.newBuyMarketOnCloseOrder(10, security)
+    }
 }
