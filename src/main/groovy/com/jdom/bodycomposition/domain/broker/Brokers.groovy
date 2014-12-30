@@ -1,4 +1,5 @@
 package com.jdom.bodycomposition.domain.broker
+
 import com.jdom.bodycomposition.domain.algorithm.BuyTransaction
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
 import com.jdom.bodycomposition.domain.algorithm.PortfolioTransaction
@@ -37,7 +38,6 @@ final class Brokers {
         private final List<Transaction> transactions = []
         private final Map<String, PortfolioTransaction> pendingTransactions = [:]
 
-
         DefaultBroker(Market market, Portfolio portfolio, long commissionCost) {
             this.market = market
             this.portfolio = portfolio
@@ -56,6 +56,32 @@ final class Brokers {
         @Override
         OrderRequest submit(final Order order) throws OrderRejectedException {
 
+            def transaction = validateOrderTransaction(order)
+
+            // This would be valid, store the pending transaction
+            def submittedOrder = market.submit(this, order)
+            pendingTransactions.put(submittedOrder.id, transaction)
+            return submittedOrder
+        }
+
+        @Override
+        List<OrderRequest> submit(final OneCancelsOther oco) {
+
+            // TODO: Should handle all possible variant spinoffs of each indidivual OCO
+            def transactions = [oco.firstOrder, oco.secondOrder].collect { order -> validateOrderTransaction(order) }
+
+            // This would be valid, store the pending transactions
+            List<OrderRequest> submittedOrders = market.submit(this, oco)
+            submittedOrders.eachWithIndex { submittedOrder, idx ->
+                // Right now this will always process pending transactions as if both sides of an OCO order will
+                // go through if they are of the same type (buy/sell)
+                pendingTransactions.put(submittedOrder.id, transactions[idx])
+            }
+
+            return submittedOrders
+        }
+
+        private PortfolioTransaction validateOrderTransaction(Order order) throws OrderRejectedException {
             // Try to process the transaction before submitting to the market
             try {
                 def transaction = createTransaction(order)
@@ -69,23 +95,17 @@ final class Brokers {
                 }
                 pendingPortfolio = transaction.apply(pendingPortfolio, false)
 
-                def pendingTransactionsOfDifferentType = pendingTransactions.findAll { it.value.class != transaction.class }
+                def pendingTransactionsOfDifferentType = pendingTransactions.findAll {
+                    it.value.class != transaction.class
+                }
                 pendingTransactionsOfDifferentType.each { id, pendingTransaction ->
                     pendingTransaction.apply(pendingPortfolio, false) // Run against each one individually to make sure it would be compatible
                 }
 
-                // This would be valid, store the pending transaction
-                def submittedOrder = market.submit(this, order)
-                pendingTransactions.put(submittedOrder.id, transaction)
-                return submittedOrder
+                return transaction
             } catch (Exception e) {
                 throw new OrderRejectedException(e)
             }
-        }
-
-        @Override
-        List<OrderRequest> submit(final OneCancelsOther oco) {
-            return market.submit(this, oco)
         }
 
         @Override
@@ -100,12 +120,12 @@ final class Brokers {
 
         BuyTransaction createTransaction(BuyLimitOrder limitOrder) {
             return new BuyTransaction(limitOrder.security, new Date(), limitOrder.shares, limitOrder.price,
-                    commissionCost)
+                  commissionCost)
         }
 
         SellTransaction createTransaction(SellLimitOrder limitOrder) {
             return new SellTransaction(limitOrder.security, new Date(), limitOrder.shares, limitOrder.price,
-                    commissionCost)
+                  commissionCost)
         }
 
         TransferTransaction createTransaction(Order order) {

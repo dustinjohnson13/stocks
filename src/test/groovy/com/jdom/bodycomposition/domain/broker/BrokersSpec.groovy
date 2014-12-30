@@ -1,5 +1,4 @@
 package com.jdom.bodycomposition.domain.broker
-
 import com.jdom.bodycomposition.domain.BaseSecurity
 import com.jdom.bodycomposition.domain.Stock
 import com.jdom.bodycomposition.domain.algorithm.Portfolio
@@ -16,7 +15,6 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import static com.jdom.util.MathUtil.toMoney
-
 /**
  * Created by djohnson on 12/11/14.
  */
@@ -76,7 +74,7 @@ class BrokersSpec extends Specification {
         def orderRequests = broker.submit(oco)
 
         then: 'the order is submitted to the market'
-        1 * market.submit(_ as Broker, _ as OneCancelsOther) >> [mockOrderRequest,mockOrderRequest2]
+        1 * market.submit(_ as Broker, _ as OneCancelsOther) >> [mockOrderRequest, mockOrderRequest2]
 
         and: 'the order request statuses are returned to the broker'
         orderRequests.size() == 2
@@ -150,6 +148,60 @@ class BrokersSpec extends Specification {
         'spending money that may not exist if sell orders do not fill' | Orders.newSellLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)   | Orders.newBuyLimitOrder(20, fb, toMoney('$19'), Duration.DAY_ORDER)
         'selling shares that may not exist if buy orders do not fill'  | Orders.newBuyLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)    | Orders.newSellLimitOrder(20, msft, toMoney('$19'), Duration.DAY_ORDER)
         'not enough cash to pay the commission if all orders fill'     | Orders.newBuyLimitOrder(10, msft, toMoney('$19.50'), Duration.DAY_ORDER) | Orders.newSellLimitOrder(1, msft, toMoney('$4'), Duration.DAY_ORDER)
+    }
+
+    @Unroll // TODO: Should handle all possible variant spinoffs of each indidivual OCO
+    def 'should not be able to submit multiple pending orders via one cancels another that would result in #reason'() {
+        Portfolio portfolio = Portfolio.newPortfolio(toMoney('$200'), [Position.newPosition(msft, 10)] as Set)
+        Broker broker = Brokers.create(market, portfolio, toMoney('$5'))
+
+        given: 'there is a pending order'
+        broker.submit(pendingOrder)
+
+        def orderRandomizer = new Random().nextBoolean()
+
+        when: 'another order is submitted in an oco which would result in an invalid state if the pending order is filled'
+        def order1 = orderRandomizer ? validOrder : invalidOrder
+        def order2 = orderRandomizer ? invalidOrder : validOrder
+        broker.submit(Orders.newOneCancelsOtherOrder(order1, order2))
+
+        then: 'the order is rejected'
+        thrown OrderRejectedException
+
+        where:
+        reason                                                         | pendingOrder                                                            | validOrder                                                           | invalidOrder
+        'selling shares that will not exist'                           | Orders.newSellLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)  | Orders.newBuyLimitOrder(1, fb, toMoney('$19'), Duration.DAY_ORDER)   | Orders.newSellLimitOrder(1, msft, toMoney('$19'), Duration.DAY_ORDER)
+        'spending money that will not exist'                           | Orders.newBuyLimitOrder(9, msft, toMoney('$19'), Duration.DAY_ORDER)    | Orders.newSellLimitOrder(1, msft, toMoney('$4'), Duration.DAY_ORDER) | Orders.newBuyLimitOrder(1, msft, toMoney('$19.50'), Duration.DAY_ORDER)
+        'spending money that may not exist if sell orders do not fill' | Orders.newSellLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)  | Orders.newBuyLimitOrder(1, fb, toMoney('$19'), Duration.DAY_ORDER)   | Orders.newBuyLimitOrder(20, fb, toMoney('$19'), Duration.DAY_ORDER)
+        'selling shares that may not exist if buy orders do not fill'  | Orders.newBuyLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)   | Orders.newBuyLimitOrder(1, fb, toMoney('$19'), Duration.DAY_ORDER)   | Orders.newSellLimitOrder(20, msft, toMoney('$19'), Duration.DAY_ORDER)
+        'not enough cash to pay the commission if all orders fill'     | Orders.newBuyLimitOrder(9, msft, toMoney('$19.50'), Duration.DAY_ORDER) | Orders.newBuyLimitOrder(1, fb, toMoney('$14'), Duration.DAY_ORDER)   | Orders.newBuyLimitOrder(1, msft, toMoney('$15'), Duration.DAY_ORDER)
+    }
+
+    @Unroll
+    def 'should be able to submit multiple pending orders via one cancels another that would NOT result in #reason'() {
+        Portfolio portfolio = Portfolio.newPortfolio(toMoney('$200'), [Position.newPosition(msft, 10)] as Set)
+        Broker broker = Brokers.create(market, portfolio, toMoney('$5'))
+
+        given: 'there is a pending order'
+        broker.submit(pendingOrder)
+
+        def orderRandomizer = new Random().nextBoolean()
+
+        when: 'another order is submitted in an oco which would NOT result in an invalid state if the pending order is filled'
+        def order1 = orderRandomizer ? validOrder1 : validOrder2
+        def order2 = orderRandomizer ? validOrder2 : validOrder1
+        broker.submit(Orders.newOneCancelsOtherOrder(order1, order2))
+
+        then: 'the order is not rejected'
+        notThrown OrderRejectedException
+
+        where:
+        reason                                                         | pendingOrder                                                            | validOrder1                                                          | validOrder2
+        'selling shares that will not exist'                           | Orders.newSellLimitOrder(9, msft, toMoney('$19'), Duration.DAY_ORDER)   | Orders.newBuyLimitOrder(1, fb, toMoney('$19'), Duration.DAY_ORDER)   | Orders.newSellLimitOrder(1, msft, toMoney('$19'), Duration.DAY_ORDER)
+        'spending money that will not exist'                           | Orders.newBuyLimitOrder(8, msft, toMoney('$19'), Duration.DAY_ORDER)    | Orders.newSellLimitOrder(1, msft, toMoney('$4'), Duration.DAY_ORDER) | Orders.newBuyLimitOrder(1, msft, toMoney('$19'), Duration.DAY_ORDER)
+        'spending money that may not exist if sell orders do not fill' | Orders.newSellLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)  | Orders.newBuyLimitOrder(10, fb, toMoney('$19'), Duration.DAY_ORDER)  | Orders.newBuyLimitOrder(10, fb, toMoney('$19'), Duration.DAY_ORDER)
+        'selling shares that may not exist if buy orders do not fill'  | Orders.newBuyLimitOrder(10, msft, toMoney('$15'), Duration.DAY_ORDER)   | Orders.newBuyLimitOrder(1, fb, toMoney('$19'), Duration.DAY_ORDER)   | Orders.newSellLimitOrder(10, msft, toMoney('$19'), Duration.DAY_ORDER)
+        'not enough cash to pay the commission if all orders fill'     | Orders.newBuyLimitOrder(9, msft, toMoney('$19.50'), Duration.DAY_ORDER) | Orders.newBuyLimitOrder(1, fb, toMoney('$14'), Duration.DAY_ORDER)   | Orders.newBuyLimitOrder(1, msft, toMoney('$14'), Duration.DAY_ORDER)
     }
 
     def 'should cancel order through market'() {
